@@ -8,14 +8,17 @@ def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
     total_interest = 0
     breakdown = []
     
+    # In the add_tier function
     def add_tier(amount, rate, description=""):
         interest = amount * rate
+        # Debug print
+        print(f"Adding tier: amount={amount}, rate={rate}, description={description}")
         breakdown.append({
-            'amount_in_tier': amount,
-            'tier_rate': rate,
+            'amount_in_tier': float(amount),
+            'tier_rate': float(rate),
             'tier_interest': interest,
             'monthly_interest': interest / 12,
-            'description': description
+            'description': str(description).strip() 
         })
         return interest
 
@@ -75,7 +78,7 @@ def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
                     interest = amount_in_tier * bonus_rate
                     total_interest += interest
                     add_tier(amount_in_tier, bonus_rate, 
-                        f"Bonus: Criteria A + Spend (${bank_requirements['spend_amount']:,.2f}) tier {tier['balance_tier']}")
+                        f"Salary Credit  + Credit Card Spend (${bank_requirements['spend_amount']:,.2f}) for {tier['balance_tier']}")
                     remaining_amount -= amount_in_tier
                     if remaining_amount <= 0:
                         break
@@ -89,7 +92,7 @@ def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
                     interest = amount_in_tier * bonus_rate
                     total_interest += interest
                     add_tier(amount_in_tier, bonus_rate, 
-                        f"Bonus: Spend only (${bank_requirements['spend_amount']:,.2f}) tier {tier['balance_tier']}")
+                        f"Credit card spend (${bank_requirements['spend_amount']:,.2f}) interest")
                     remaining_amount -= amount_in_tier
                     if remaining_amount <= 0:
                         break
@@ -173,8 +176,13 @@ def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
             spend_tiers = [t for t in bank_info['tiers'] if t['tier_type'] == 'spend']
             spend_tier = spend_tiers[1] if bank_requirements['spend_amount'] >= 1500 else spend_tiers[0]
             rate = float(str(spend_tier['interest_rate']).strip('%')) / 100
-            total_interest += add_tier(eligible_amount_100k, rate, 
-                f"Card Spend Bonus (${bank_requirements['spend_amount']:,.2f})")
+            
+            # Debug print
+            print(f"Spend tier description: {spend_tier['remarks']}")
+            print(f"Formatted description: Card Spend Bonus (${bank_requirements['spend_amount']:,.2f})")
+            
+            description = f"Card Spend Bonus (${bank_requirements['spend_amount']:,.2f})"
+            total_interest += add_tier(eligible_amount_100k, rate, description)
         
         # Salary bonus
         if bank_requirements['has_salary'] and bank_requirements['salary_amount'] >= 2000:
@@ -207,7 +215,7 @@ def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
         base_tier = next(t for t in bank_info['tiers'] if t['tier_type'] == 'base')
         base_rate = float(str(base_tier['interest_rate']).strip('%')) / 100
         total_interest = deposit_amount * base_rate
-        add_tier(deposit_amount, base_rate, "Base Interest")
+        # add_tier(deposit_amount, base_rate, "Base Interest")
         
         # Then add bonus interest for tiered amounts
         first_20k = min(deposit_amount, 20000)
@@ -524,37 +532,27 @@ def streamlit_app():
     banks_data = process_interest_rates()
     
     st.title("🏦 SmartSaverSG")
-    st.subheader("Maximize Your Savings with AI-Powered Bank Interest Optimization")
+    st.subheader("Maximize Your Savings with Bank Interest Calculator")
     
     st.write("""
         SmartSaverSG helps you optimize your savings by analyzing multiple bank accounts 
         and their requirements to find the best interest rates. Simply enter your deposit 
-        amount and banking preferences to get personalized recommendations.
+        amount and banking preferences to get recommendations.
     """)
 
-    
-    # Add disclaimer in red
-    st.markdown("""
-        <div style='background-color: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
-            <span style='color: #c62828; font-weight: bold;'>⚠️ Disclaimer:</span>
-            <span style='color: #c62828;'>
-                This calculator provides general information only and does not constitute financial advice. 
-                Please verify all rates with the respective banks and consult a financial advisor for personalized recommendations.
-            </span>
-        </div>
-    """, unsafe_allow_html=True)
+
+    # Requirements Section
+    st.write("##### Step 1: Enter Your Banking Activities")
     
     try:
         # Investment Amount Input
         amount_str = st.text_input(
-            "Investment Amount ($)", 
+            "Total Amount of Savings ($)", 
             value="10,000",
             help="Enter amount with commas (e.g., 100,000)"
         )
         investment_amount = int(amount_str.replace(",", ""))
         
-        # Requirements Section
-        st.subheader("Your Banking Activities")
         
         # Organize requirements into logical groups using columns and expanders
         col1, col2 = st.columns(2)
@@ -590,7 +588,7 @@ def streamlit_app():
                 st.caption(f"Selected Card Spend: ${format_number(card_spend)}")
         
         with col2:
-            # Additional Requirements
+            # Additional Requirementsg
             with st.expander("🏦 Additional Requirements", expanded=True):
                 meets_criteria_a = st.toggle(
                     "UOB One Salary Credit",
@@ -604,14 +602,27 @@ def streamlit_app():
                 )
         
         # Advanced Requirements
-        with st.expander("📈 Investment & Insurance", expanded=False):
+        with st.expander("📈 Bank-specific Bonuses", expanded=False):
             col3, col4 = st.columns(2)
             with col3:
-                has_insurance = st.toggle("Have Insurance Products")
-                has_investments = st.toggle("Have Investments")
+                has_insurance = st.toggle(
+                    "Have Insurance Products",
+                    help="""Select this if you have any of the following insurance:\n
+• SC BonusSaver: Purchase eligible insurance products\n
+• OCBC 360: Min. S$2,000 annual insurance premium\n
+• BOC SmartSaver: Purchase eligible insurance products"""
+                )
+                has_investments = st.toggle(
+                    "Have Investments",
+                    help="""Select this if you have any of the following investments:\n
+• SC BonusSaver: Invest in eligible investment products\n
+• OCBC 360: Min. S$2,000 in eligible investment products"""
+                )
             with col4:
-                has_increased_balance = st.toggle("Increased Monthly Balance")
-                has_grow = st.toggle("Increased Wealth Balance")
+                has_increased_balance = st.toggle("[OCBC] Increased Monthly Balance",
+                                                  help="Increase your OCBC account average daily balance by at least S$500 monthly")
+                has_grow = st.toggle("[OCBC] Increased Wealth Balance",
+                                     help="Maintain an average daily balance on OCBC account of at least S$200,000")
         
         # Create base requirements dictionary (moved outside tabs)
         base_requirements = {
@@ -626,14 +637,24 @@ def streamlit_app():
             'has_grow': has_grow
         }
 
-        # About Section
-        st.subheader("Choose between 2 functions:")
+        # Create a more descriptive section for the two options
+        st.write("##### Step 2: Select your calculation method:")
         
-        # Create tabs for different calculation modes
-        tab1, tab2 = st.tabs(["💰 Calculate Interest", "📊 Optimize Distribution"])
+        # Create tabs with clearer descriptions and icons
+        tab1, tab2 = st.tabs([
+            "🏦 Single Bank Calculator",
+            "🔄 Multi-Bank Optimizer"
+        ])
         
         with tab1:
-            if st.button("Calculate Interest Rates", type="primary"):
+            st.write("""
+                **Calculate interest for a single bank account**
+                - See detailed breakdowns for each bank
+                - Compare base rates and bonus interest
+                - Understand requirements for each bank
+            """)
+            
+            if st.button("Calculate Single Bank Interest", type="primary", key="single_bank_calc"):
                 with st.spinner("Calculating interest rates..."):
                     # Calculate and display results for each bank
                     bank_results = []
@@ -659,7 +680,7 @@ def streamlit_app():
                     # Display Optimal Bank First
                     optimal_bank = bank_results[0]
                     st.write("### 🏆 Optimal Choice")
-                    st.success(f"**{optimal_bank['bank']}** offers the highest interest rate:")
+                    st.success(f"**{optimal_bank['bank']}** offers the highest interest rate!")
                     col_opt1, col_opt2 = st.columns(2)
                     with col_opt1:
                         st.metric("Monthly Interest", f"${optimal_bank['monthly_interest']:,.2f}")
@@ -670,39 +691,73 @@ def streamlit_app():
                     if optimal_bank['breakdown']:
                         st.write("Interest Breakdown:")
                         for tier in optimal_bank['breakdown']:
-                            formatted_line = (
-                                f"• ${tier['amount_in_tier']:,.2f} at "
-                                f"{tier['tier_rate']*100:.2f}% - "
-                                f"{tier['description']}"
-                            )
-                            st.write(formatted_line)
+                            try:
+                                # Convert all values to basic Python types first
+                                amount_val = float(tier['amount_in_tier'])
+                                rate_val = float(tier['tier_rate'])
+                                desc_val = str(tier['description']).strip()
+                                
+                                # Build string piece by piece
+                                bullet = "•"
+                                amount_str = "${:,.2f}".format(amount_val)
+                                rate_str = "{:.2f}%".format(rate_val * 100)
+                                
+                                # Combine with explicit spaces
+                                line = f"{bullet} {amount_str} at {rate_str} - {desc_val}"
+                                
+                                # Display using text
+                                st.text(line)
+                                
+                            except Exception as e:
+                                st.error(f"Error formatting tier {i}: {str(e)}")
                     
                     # Divider between optimal and all results
                     st.markdown("---")
                     
                     # Display All Bank Results
-                    st.write("### �� All Bank Details")
+                    st.write("### All Bank Details")
                     for result in bank_results:
                         with st.expander(f"{result['bank']} Details", expanded=False):
-                            col5, col6 = st.columns(2)
-                            with col5:
+                            # Create two columns for Monthly and Annual Interest
+                            col1, col2 = st.columns(2)
+                            with col1:
                                 st.metric("Monthly Interest", f"${result['monthly_interest']:,.2f}")
-                            with col6:
+                            with col2:
                                 st.metric("Annual Interest", f"${result['annual_interest']:,.2f}")
-                                
-                                # Show breakdown
-                                if result['breakdown']:
-                                    st.write("Interest Breakdown:")
-                                    for tier in result['breakdown']:
-                                        formatted_line = (
-                                            f"• ${tier['amount_in_tier']:,.2f} at "
-                                            f"{tier['tier_rate']*100:.2f}% - "
-                                            f"{tier['description']}"
-                                        )
-                                        st.write(formatted_line)
+                            
+                            # Show breakdown with fixed formatting
+                            if result['breakdown']:
+                                st.write("Interest Breakdown:")
+                                for tier in result['breakdown']:
+                                    try:
+                                        # Convert all values to basic Python types first
+                                        amount_val = float(tier['amount_in_tier'])
+                                        rate_val = float(tier['tier_rate'])
+                                        desc_val = str(tier['description']).strip()
+                                        
+                                        # Build string piece by piece
+                                        bullet = "•"
+                                        amount_str = "${:,.2f}".format(amount_val)
+                                        rate_str = "{:.2f}%".format(rate_val * 100)
+                                        
+                                        # Combine with explicit spaces
+                                        line = f"{bullet} {amount_str} at {rate_str} - {desc_val}"
+                                        
+                                        # Display using text
+                                        st.text(line)
+                                        
+                                    except Exception as e:
+                                        st.error(f"Error formatting tier {i}: {str(e)}")
         
         with tab2:
-            if st.button("Calculate Optimal Distribution", type="primary"):
+            st.write("""
+                **Optimize across multiple banks**
+                - Find the best combination of accounts
+                - Maximize your total interest earned
+                - Get recommendations for salary crediting and spending
+            """)
+            
+            if st.button("Calculate Optimal Distribution", type="primary", key="multi_bank_calc"):
                 with st.spinner("Optimizing distribution..."):
                     # First optimize deposit distribution
                     top_solutions = optimize_bank_distribution(
@@ -765,6 +820,19 @@ def streamlit_app():
                                     # Salary Credit Info
                                     if base_requirements['has_salary'] and solution['salary_bank']:
                                         st.info(f"💡 Credit your salary to: {solution['salary_bank']}")
+
+
+
+                    # Add disclaimer in red
+        st.markdown("""
+            <div style='background-color: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
+                <span style='color: #c62828; font-weight: bold;'>⚠️ Disclaimer:</span>
+                <span style='color: #c62828;'>
+                    This calculator provides general information only and does not constitute financial advice. 
+                    Please verify all rates with the respective banks and consult a financial advisor for personalized recommendations.
+                </span>
+            </div>
+        """, unsafe_allow_html=True)
     
     except Exception as e:
         st.error(f"Error: {str(e)}")
