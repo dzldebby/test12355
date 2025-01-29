@@ -137,15 +137,42 @@ def assign_variant():
         logger.info("Assigning variant...")
         if 'variant' not in st.session_state:
             user_id = get_user_id()
+            # Track initial assignment
             variant = 'A' if hash(user_id) % 2 == 0 else 'B'
             st.session_state.variant = variant
             logger.info(f"Assigned variant: {variant}")
             
             if MIXPANEL_ENABLED:
+                # Track variant assignment as a separate event
                 mp.track(user_id, 'Assigned Variant', {
-                    'variant': variant
+                    'variant': variant,
+                    'timestamp': str(datetime.now())
+                })
+                # Set variant as a user property
+                mp.people_set(user_id, {
+                    'variant': variant,
+                    'first_visit': str(datetime.now()),
+                    'platform': 'Streamlit'
                 })
         return st.session_state.variant
     except Exception as e:
         logger.error(f"Error in assign_variant: {str(e)}")
         return 'A'  # Default to A if there's an error
+
+
+def track_error(error_type, error_message):
+    """Track when errors occur"""
+    try:
+        if MIXPANEL_ENABLED:
+            logger.info(f"Tracking error: {error_type}")
+            user_id = get_user_id()
+            mp.track(user_id, 'Error Occurred', {
+                'type': error_type,
+                'message': error_message,
+                'variant': st.session_state.get('variant', 'unknown'),
+                'timestamp': str(datetime.now()),
+                'page': 'main',  # Add page context
+                'action': 'error'  # Add action context
+            })
+    except Exception as e:
+        logger.error(f"Error in track_error: {str(e)}")

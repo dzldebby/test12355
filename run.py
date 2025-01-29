@@ -575,6 +575,8 @@ def streamlit_app():
                     help="Enter amount with commas (e.g., 100,000)"
                 )
                 investment_amount = int(amount_str.replace(",", ""))
+                track_bank_interaction('amount_input', 'text_input_used')  # Add this line
+
             else:
                 # Variant B: Slider input
                 amount_str = st.slider(
@@ -586,6 +588,7 @@ def streamlit_app():
                     format="$%d"
                 )
                 investment_amount = int(amount_str)
+                track_bank_interaction('amount_input', 'slider_used')  # Add this line
 
             
             
@@ -690,6 +693,7 @@ def streamlit_app():
                 """)
                 
                 if st.button("Calculate Single Bank Interest", type="primary", key="single_bank_calc"):
+                    track_calculation('single_bank', investment_amount, base_requirements)
                     with st.spinner("Calculating interest rates..."):
                         # Calculate and display results for each bank
                         bank_results = []
@@ -793,6 +797,7 @@ def streamlit_app():
                 """)
                 
                 if st.button("Calculate Optimal Distribution", type="primary", key="multi_bank_calc"):
+                    track_calculation('multi_bank', investment_amount, base_requirements)
                     with st.spinner("Optimizing distribution..."):
                         # First optimize deposit distribution
                         top_solutions = optimize_bank_distribution(
