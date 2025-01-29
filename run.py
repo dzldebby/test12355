@@ -7,7 +7,6 @@ from analytics import (
     identify_user, 
     assign_variant, 
     track_calculation, 
-    track_bank_interaction,
     mp,
     MIXPANEL_ENABLED,
 )
