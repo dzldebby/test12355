@@ -41,11 +41,29 @@ def get_user_id():
         logger.info("Getting user ID...")
         if 'user_id' not in st.session_state:
             logger.info("Generating new user ID...")
-            st.session_state.user_id = str(st.experimental_user.hash)
-            logger.info(f"Generated user ID: {st.session_state.user_id}")
+            try:
+                # Log the experimental_user object
+                logger.info(f"experimental_user object: {st.experimental_user}")
+                user_hash = st.experimental_user.hash
+                logger.info(f"Generated hash: {user_hash}")
+                st.session_state.user_id = str(user_hash)
+                logger.info(f"Generated user ID: {st.session_state.user_id}")
+            except AttributeError as e:
+                logger.error(f"AttributeError accessing experimental_user: {str(e)}")
+                # Fallback to a random ID if experimental_user fails
+                import uuid
+                fallback_id = str(uuid.uuid4())
+                logger.info(f"Using fallback ID: {fallback_id}")
+                st.session_state.user_id = fallback_id
+            except Exception as e:
+                logger.error(f"Unexpected error generating user ID: {type(e).__name__}: {str(e)}")
+                raise
         return st.session_state.user_id
     except Exception as e:
-        logger.error(f"Error in get_user_id: {str(e)}")
+        logger.error(f"Error in get_user_id: {type(e).__name__}: {str(e)}")
+        # Include traceback in logs
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return "unknown_user"
 
 def identify_user():
