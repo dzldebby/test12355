@@ -8,7 +8,8 @@ from analytics import (
     assign_variant, 
     track_calculation, 
     track_bank_interaction,
-    track_error
+    mp,
+    MIXPANEL_ENABLED,
 )
 
 def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
@@ -20,7 +21,7 @@ def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
     def add_tier(amount, rate, description=""):
         interest = amount * rate
         # Debug print
-        print(f"Adding tier: amount={amount}, rate={rate}, description={description}")
+        # print(f"Adding tier: amount={amount}, rate={rate}, description={description}")
         breakdown.append({
             'amount_in_tier': float(amount),
             'tier_rate': float(rate),
@@ -186,8 +187,8 @@ def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
             rate = float(str(spend_tier['interest_rate']).strip('%')) / 100
             
             # Debug print
-            print(f"Spend tier description: {spend_tier['remarks']}")
-            print(f"Formatted description: Card Spend Bonus (${bank_requirements['spend_amount']:,.2f})")
+            # print(f"Spend tier description: {spend_tier['remarks']}")
+            # print(f"Formatted description: Card Spend Bonus (${bank_requirements['spend_amount']:,.2f})")
             
             description = f"Card Spend Bonus (${bank_requirements['spend_amount']:,.2f})"
             total_interest += add_tier(eligible_amount_100k, rate, description)
@@ -486,6 +487,15 @@ def streamlit_app():
         # User identification
         user_id = identify_user()
         variant = assign_variant()
+
+
+        # Track page view
+        if MIXPANEL_ENABLED:
+            mp.track(st.session_state.user_id, 'Page Viewed', {
+                'page': 'main',
+                'variant': variant
+            })
+
         # Add mobile detection and sidebar control
         st.markdown("""
             <style>
@@ -575,7 +585,13 @@ def streamlit_app():
                     help="Enter amount with commas (e.g., 100,000)"
                 )
                 investment_amount = int(amount_str.replace(",", ""))
-                track_bank_interaction('amount_input', 'text_input_used')  # Add this line
+                
+                # Track page view
+                if MIXPANEL_ENABLED:
+                    mp.track(st.session_state.user_id, 'Savings Entered (Text Input)', {
+                        'savings': amount_str,
+                        'variant': variant
+                    })
 
             else:
                 # Variant B: Slider input
@@ -588,7 +604,13 @@ def streamlit_app():
                     format="$%d"
                 )
                 investment_amount = int(amount_str)
-                track_bank_interaction('amount_input', 'slider_used')  # Add this line
+
+                                # Track page view
+                if MIXPANEL_ENABLED:
+                    mp.track(st.session_state.user_id, 'Savings Entered (Slider)', {
+                        'savings': amount_str,
+                        'variant': variant
+                    })
 
             
             
@@ -612,6 +634,14 @@ def streamlit_app():
                             format="%d"
                         )
                         st.caption(f"Selected Salary: ${format_number(salary_amount)}")
+
+                        # Track page view
+                        if MIXPANEL_ENABLED:
+                            mp.track(st.session_state.user_id, 'Salary Entered', {
+                                'salary': salary_amount,
+                                'variant': variant
+                            })
+
                     else:
                         salary_amount = 0
                     
@@ -641,6 +671,12 @@ def streamlit_app():
             
             # Advanced Requirements
             with st.expander("📈 Bank-specific Bonuses", expanded=False):
+                                        # Track page view
+                if MIXPANEL_ENABLED:
+                    mp.track(st.session_state.user_id, 'Clicked on Bank-Specific Bonus', {
+                        'page': 'main',
+                        'variant': variant
+                    })
                 col3, col4 = st.columns(2)
                 with col3:
                     has_insurance = st.toggle(
@@ -694,6 +730,14 @@ def streamlit_app():
                 
                 if st.button("Calculate Single Bank Interest", type="primary", key="single_bank_calc"):
                     track_calculation('single_bank', investment_amount, base_requirements)
+
+                    if MIXPANEL_ENABLED:
+                        mp.track(st.session_state.user_id, 'Calculate Single Bank Interest', {
+                            'type': 'single_bank',
+                            'amount': investment_amount,
+                            'variant': variant
+                        })
+
                     with st.spinner("Calculating interest rates..."):
                         # Calculate and display results for each bank
                         bank_results = []

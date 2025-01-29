@@ -176,3 +176,19 @@ def track_error(error_type, error_message):
             })
     except Exception as e:
         logger.error(f"Error in track_error: {str(e)}")
+
+
+
+def track_page_view(page_name):
+    """Track when user views a page"""
+    try:
+        if MIXPANEL_ENABLED:
+            logger.info(f"Tracking page view: {page_name}")
+            user_id = get_user_id()
+            mp.track(user_id, 'Page Viewed', {
+                'page': page_name,
+                'variant': st.session_state.get('variant', 'unknown'),
+                'timestamp': str(datetime.now())
+            })
+    except Exception as e:
+        logger.error(f"Error in track_page_view: {str(e)}")
