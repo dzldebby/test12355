@@ -11,9 +11,13 @@ logger = logging.getLogger(__name__)
 streamlit_handler = logging.StreamHandler(stream=sys.stdout)
 logger.addHandler(streamlit_handler)
 
+# Initialize variables with defaults
+MIXPANEL_ENABLED = False
+mp = None  # Define mp at the module level with a default value
+
 try:
     logger.info("Attempting to import mixpanel...")
-    import mixpanel
+    from mixpanel import Mixpanel
     logger.info("Mixpanel import successful")
     
     logger.info("Attempting to get Mixpanel token from secrets...")
@@ -21,19 +25,25 @@ try:
     logger.info("Successfully retrieved Mixpanel token")
     
     logger.info("Initializing Mixpanel...")
-    mp = mixpanel.Mixpanel(token)
+    mp = Mixpanel(token)
     MIXPANEL_ENABLED = True
     logger.info("Mixpanel initialization successful")
     
 except ImportError as e:
     logger.error(f"Failed to import mixpanel: {str(e)}")
-    MIXPANEL_ENABLED = False
 except KeyError as e:
     logger.error(f"Failed to get Mixpanel token from secrets: {str(e)}")
-    MIXPANEL_ENABLED = False
 except Exception as e:
     logger.error(f"Unexpected error during Mixpanel setup: {str(e)}")
-    MIXPANEL_ENABLED = False
+
+# Make sure all required variables are defined
+if mp is None:
+    # Create a dummy mp object that does nothing
+    class DummyMixpanel:
+        def track(self, *args, **kwargs): pass
+        def people_set(self, *args, **kwargs): pass
+    mp = DummyMixpanel()
+
 
 def get_user_id():
     """Get user ID from session state, initializing if needed"""
