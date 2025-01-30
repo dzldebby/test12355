@@ -579,7 +579,7 @@ def streamlit_app():
             if variant == 'A':
                 # Variant A: Text input (original)
                 amount_str = st.text_input(
-                    "Total Amount of Savings ($)", 
+                    "Enter deposit amount to calculate interest ($)", 
                     value="10,000",
                     help="Enter amount with commas (e.g., 100,000)"
                 )
@@ -595,7 +595,7 @@ def streamlit_app():
             else:
                 # Variant B: Slider input
                 amount_str = st.slider(
-                    "Total Amount of Savings ($)",
+                    "Select deposit amount to calculate interest ($)",
                     min_value=0,
                     max_value=1000000,
                     value=10000,
@@ -720,13 +720,16 @@ def streamlit_app():
             ])
             
             with tab1:
-                st.write("""
-                    **Calculate interest for a single bank account**
-                    - See detailed breakdowns for each bank
-                    - Compare base rates and bonus interest
-                    - Understand requirements for each bank
-                """)
+                st.markdown("""
+                    **Calculate interest for a single bank account***""")
+
+
+                st.markdown(""" - See detailed breakdowns for each bank""", help="Banks included: Chocolate Financial, UOB One, SC BonusSaver, BOC SmartSaver, OCBC 360")
                 
+                st.markdown(""" - Compare base rates and bonus interest""")
+
+
+
                 if st.button("Calculate Single Bank Interest", type="primary", key="single_bank_calc"):
                     track_calculation('single_bank', investment_amount, base_requirements)
 
