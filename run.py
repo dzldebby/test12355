@@ -465,33 +465,37 @@ def show_interest_rates_page(banks_data):
         st.dataframe(display_df, hide_index=True)
         st.markdown("---")
 
-def is_mobile():
-    """Check if current view is from a mobile device"""
-    try:
-        # Get viewport width from streamlit
-        viewport = st.get_option('client.displayWidth')
-        return viewport < 768  # Standard mobile breakpoint
-    except:
-        return False
+# Mobile detection component
+def mobile_detector():
+    return st.components.v1.html(
+        """
+        <script>
+            if (window.innerWidth <= 768) {
+                window.parent.document.querySelector('.css-1544g2n.e1fqkh3o4').style.display = 'none';
+            }
+            window.addEventListener('resize', function() {
+                const sidebar = window.parent.document.querySelector('.css-1544g2n.e1fqkh3o4');
+                if (window.innerWidth <= 768) {
+                    sidebar.style.display = 'none';
+                } else {
+                    sidebar.style.display = 'block';
+                }
+            });
+        </script>
+        """,
+        height=0,
+    )
 
-def is_mobile():
-    try:
-        import re
-        # Get user agent string from session state
-        user_agent = st.get_user_agent()
-        # Common mobile device patterns
-        mobile_patterns = r'(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino'
-        return bool(re.search(mobile_patterns, user_agent.lower()))
-    except:
-        return False
-
-# Set page config with mobile-aware sidebar state
+# Set page config with expanded sidebar by default
 st.set_page_config(
     page_title="SmartSaverSG",
     page_icon="🏦",
     layout="wide",
-    initial_sidebar_state="collapsed" if is_mobile() else "expanded"
+    initial_sidebar_state="expanded"
 )
+
+# Add mobile detector
+mobile_detector()
 
 def streamlit_app():
     try:
@@ -507,60 +511,6 @@ def streamlit_app():
                 'variant': variant
             })
 
-        # Add mobile detection and sidebar control
-        st.markdown("""
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            /* Hide fork button and GitHub link */
-            .stActionButton, .viewerBadge_container__1QSob {
-                display: none !important;
-            }
-            /* Hide 'deploy' button */
-            .stDeployButton {
-                display: none !important;
-            }
-            /* Remove padding/margin from the top of the page */
-            .block-container {
-                padding-top: 1rem !important;
-            }
-            /* Hide hamburger menu */
-            .css-r698ls {
-                display: none;
-            }
-            /* Hide 'Made with Streamlit' */
-            .css-1vq4p4l {
-                display: none;
-            }
-            </style>
-            <script>
-                function detectMob() {
-                    const toMatch = [
-                        /Android/i,
-                        /webOS/i,
-                        /iPhone/i,
-                        /iPad/i,
-                        /iPod/i,
-                        /BlackBerry/i,
-                        /Windows Phone/i
-                    ];
-                    
-                    return toMatch.some((toMatchItem) => {
-                        return navigator.userAgent.match(toMatchItem);
-                    });
-                }
-
-                // If not mobile, expand sidebar
-                if (!detectMob()) {
-                    const sidebarExpander = document.querySelector('button[kind="secondary"][aria-label="Toggle sidebar visibility"]');
-                    if (sidebarExpander) {
-                        sidebarExpander.click();
-                    }
-                }
-            </script>
-        """, unsafe_allow_html=True)
-        
         # Then: Load interest rates data
         banks_data = process_interest_rates()
         
