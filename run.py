@@ -11,6 +11,7 @@ from analytics import (
     MIXPANEL_ENABLED,
 )
 
+
 def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
     """Calculate interest based on the bank's tier structure and requirements"""
     total_interest = 0
@@ -473,12 +474,23 @@ def is_mobile():
     except:
         return False
 
-# Set page config (without mobile check initially)
+def is_mobile():
+    try:
+        import re
+        # Get user agent string from session state
+        user_agent = st.get_user_agent()
+        # Common mobile device patterns
+        mobile_patterns = r'(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino'
+        return bool(re.search(mobile_patterns, user_agent.lower()))
+    except:
+        return False
+
+# Set page config with mobile-aware sidebar state
 st.set_page_config(
     page_title="SmartSaverSG",
     page_icon="🏦",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed" if is_mobile() else "expanded"
 )
 
 def streamlit_app():
@@ -555,25 +567,19 @@ def streamlit_app():
         st.title("🏦 SmartSaverSG")
         st.subheader("Maximize Your Savings with Bank Interest Calculator")
         
-        st.write("""
-            SmartSaverSG helps you optimize your savings by analyzing multiple bank accounts 
-            and their requirements to find the best interest rates. Simply enter your deposit 
-            amount and banking preferences to get recommendations.
-        """)
+
+        with st.expander("💰 About SmartSaverSG", expanded=False):
+            st.write("""
+                SmartSaverSG helps you optimize your savings by analyzing multiple bank accounts 
+                and their requirements to find the best interest rates. Simply enter your deposit 
+                amount and banking preferences to get recommendations.
+            """)
 
 
         # Requirements Section
-        st.write("##### Step 1: Enter Your Banking Activities")
+        st.write("##### Step 1: Enter Banking Activities")
         
         try:
-            # # Investment Amount Input
-            # amount_str = st.text_input(
-            #     "Total Amount of Savings ($)", 
-            #     value="10,000",
-            #     help="Enter amount with commas (e.g., 100,000)"
-            # )
-            # investment_amount = int(amount_str.replace(",", ""))
-
 
             # Add A/B test variations for the input interface
             if variant == 'A':
@@ -656,7 +662,7 @@ def streamlit_app():
             
             with col2:
                 # Additional Requirementsg
-                with st.expander("🏦 Additional Requirements", expanded=True):
+                with st.expander("🏦 Additional Requirements (Optional)", expanded=True):
                     meets_criteria_a = st.toggle(
                         "UOB One Salary Credit",
                         help="For UOB One, salary can be simulated"
@@ -669,7 +675,7 @@ def streamlit_app():
                     )
             
             # Advanced Requirements
-            with st.expander("📈 Bank-specific Bonuses", expanded=False):
+            with st.expander("📈 Bank-specific Bonuses (Optional)", expanded=False):
                                         # Track page view
                 if MIXPANEL_ENABLED:
                     mp.track(st.session_state.user_id, 'Clicked on Bank-Specific Bonus', {
@@ -801,6 +807,19 @@ def streamlit_app():
                         
                         # Display All Bank Results
                         st.write("### All Bank Details")
+
+
+                        # Define bank URLs
+                        bank_urls = {
+                            "UOB One": "https://www.uob.com.sg/personal/save/chequeing/one-account.page",
+                            "OCBC 360": "https://www.ocbc.com/personal-banking/deposits/360-account",
+                            "SC BonusSaver": "https://www.sc.com/sg/save/current-accounts/bonussaver/",
+                            "BOC SmartSaver": "https://www.bankofchina.com/sg/bocproduct/pb/201702/t20170214_8480534.html",
+                            "Chocolate": "https://www.chocolatefinance.com/#Benefits"
+                        }
+                        
+
+
                         for result in bank_results:
                             with st.expander(f"{result['bank']} Details", expanded=False):
                                 # Create two columns for Monthly and Annual Interest
@@ -809,6 +828,10 @@ def streamlit_app():
                                     st.metric("Monthly Interest", f"${result['monthly_interest']:,.2f}")
                                 with col2:
                                     st.metric("Annual Interest", f"${result['annual_interest']:,.2f}")
+
+                                                                # Add bank URL if available
+                                if result['bank'] in bank_urls:
+                                    st.markdown(f"[Visit {result['bank']} website →]({bank_urls[result['bank']]})")
                                 
                                 # Show breakdown with fixed formatting
                                 if result['breakdown']:
