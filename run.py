@@ -465,28 +465,7 @@ def show_interest_rates_page(banks_data):
         st.dataframe(display_df, hide_index=True)
         st.markdown("---")
 
-# Mobile detection component
-def mobile_detector():
-    return st.components.v1.html(
-        """
-        <script>
-            if (window.innerWidth <= 768) {
-                window.parent.document.querySelector('.css-1544g2n.e1fqkh3o4').style.display = 'none';
-            }
-            window.addEventListener('resize', function() {
-                const sidebar = window.parent.document.querySelector('.css-1544g2n.e1fqkh3o4');
-                if (window.innerWidth <= 768) {
-                    sidebar.style.display = 'none';
-                } else {
-                    sidebar.style.display = 'block';
-                }
-            });
-        </script>
-        """,
-        height=0,
-    )
-
-# Set page config with expanded sidebar by default
+# Set page config first
 st.set_page_config(
     page_title="SmartSaverSG",
     page_icon="🏦",
@@ -494,8 +473,23 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Add mobile detector
-mobile_detector()
+# Add CSS for responsive sidebar and mobile optimization
+st.markdown("""
+    <style>
+    /* Hide sidebar on mobile */
+    @media (max-width: 768px) {
+        section[data-testid="stSidebar"] {
+            display: none !important;
+        }
+        /* Optimize spacing for mobile */
+        .block-container {
+            padding-top: 1rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 def streamlit_app():
     try:
