@@ -364,7 +364,7 @@ def optimize_bank_distribution(total_amount, banks_data, user_requirements):
             if amount > 0:
                 bank_reqs = user_requirements.copy()
                 if bank == 'UOB One':
-                    bank_reqs['meets_criteria_a'] = user_requirements['meets_criteria_a']
+                    bank_reqs['meets_criteria_a'] = user_requirements.get('meets_criteria_a', False)
                 else:
                     bank_reqs['has_salary'] = (bank == salary_bank) and user_requirements['has_salary']
                 
@@ -470,22 +470,26 @@ st.set_page_config(
     page_title="SmartSaverSG",
     page_icon="🏦",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"  # Start collapsed for mobile
 )
 
 # Add CSS for responsive sidebar and mobile optimization
 st.markdown("""
     <style>
-    /* Hide sidebar on mobile */
+    /* Mobile optimizations */
     @media (max-width: 768px) {
-        section[data-testid="stSidebar"] {
-            display: none !important;
-        }
         /* Optimize spacing for mobile */
         .block-container {
             padding-top: 1rem !important;
             padding-left: 1rem !important;
             padding-right: 1rem !important;
+        }
+        
+        /* Make sidebar narrower on mobile */
+        [data-testid="stSidebar"] {
+            width: 80vw !important;
+            min-width: 200px !important;
+            max-width: 300px !important;
         }
     }
     </style>
