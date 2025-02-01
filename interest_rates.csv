@@ -1,11 +1,11 @@
-﻿bank,tier_type,balance_tier,interest_rate,requirement_type,min_spend,min_salary,giro_count,salary_credit,cap_amount,remarks,
-UOB One,base,1,0.05%,base,0,0,0,N,1000000,Base interest with no requirements,
+bank,tier_type,balance_tier,interest_rate,requirement_type,min_spend,min_salary,giro_count,salary_credit,cap_amount,remarks,
 UOB One,spend_only,1,0.65%,spend_only,500,0,0,N,75000,First $75k with card spend only,First $75K
 UOB One,spend_only,2,0.05%,spend_only,500,0,0,N,50000,Next $50k with card spend only,Next $50K (beyond $75K)
 UOB One,spend_only,3,0.05%,spend_only,500,0,0,N,25000,Next $25k with card spend only,Next $25K(beyond $100K)
-UOB One,criteria_a,up to $75K,3.00%,criteria_a,500,0,0,Y,75000,First $75k with Criteria A + spend,
-UOB One,criteria_a,$76K - $125K,4.50%,criteria_a,500,0,0,Y,50000,Next $50k with Criteria A + spend,
-UOB One,criteria_a,up to $150K,6.00%,criteria_a,500,0,0,Y,25000,Final $25k with Criteria A + spend,
+UOB One,salary,up to $75K,3.00%,salary,500,0,0,Y,75000,First $75k with salary+ spend,
+UOB One,salary,$76K - $125K,4.50%,salary,500,0,0,Y,50000,Next $50k with salary+ spend,
+UOB One,salary,up to $150K,6.00%,salary,500,0,0,Y,25000,Final $25k with salary+ spend,
+UOB One,salary,above $150K,0.05%,salary,500,0,0,Y,999999999,Excess above $150k with salary+ spend,
 SC BonusSaver,base,1,0.05%,base,0,0,0,N,100000,Base interest with no requirements,
 SC BonusSaver,salary,1,1.00%,salary,0,3000,0,Y,100000,Regular salary credit at least $3000,
 SC BonusSaver,spend,1,1.00%,spend,1000,0,0,N,100000,Card spend at least $1000,

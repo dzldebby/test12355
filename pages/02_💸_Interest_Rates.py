@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from run import process_interest_rates
+from Calculator import process_interest_rates
 
 def interest_rates_page():
     st.title("🏦 Bank Interest Rates")
