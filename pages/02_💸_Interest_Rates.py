@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from Calculator import process_interest_rates
 
 def interest_rates_page():
     st.title("🏦 Bank Interest Rates")
@@ -18,43 +17,45 @@ def interest_rates_page():
     st.write("Current interest rates and requirements for supported banks. Updated as of 16 Jan 2025.")
     
     # Load bank data
-    banks_data = process_interest_rates()
-    
-    # Convert banks_data dictionary to a list of records
-    records = []
-    for bank_name, bank_info in banks_data.items():
-        for tier in bank_info['tiers']:
-            tier['bank'] = bank_name  # Add bank name to each tier
-            records.append(tier)
-    
-    # Convert to DataFrame
-    interest_rates_df = pd.DataFrame(records)
+    df = pd.read_csv('interest_rates.csv')
     
     # Add bank selector
     selected_bank = st.selectbox(
         "Select Bank",
-        options=interest_rates_df['bank'].unique(),
+        options=df['bank'].unique(),
         help="Choose a bank to view its interest rates"
     )
     
     # Show selected bank's data
-    bank_data = interest_rates_df[interest_rates_df['bank'] == selected_bank]
+    bank_data = df[df['bank'] == selected_bank]
     
     # Create a formatted table
-    cols = ['tier_type', 'balance_tier', 'interest_rate', 'requirement_type', 'remarks']
+    cols = ['tier_type', 'balance_tier', 'interest_rate', 'remarks']
     display_df = bank_data[cols].copy()
-    display_df.columns = ['Tier Type', 'Balance Tier', 'Interest Rate (%)', 'Requirement', 'Remarks']
+    display_df.columns = ['Type', 'Balance Tier', 'Interest Rate', 'Requirements']
     
     # Display the table with styling
     st.dataframe(
         display_df,
         hide_index=True,
         column_config={
-            "Interest Rate (%)": st.column_config.NumberColumn(
-                format="%.2f%%"
+            "Type": st.column_config.TextColumn(
+                "Type",
+                help="Type of interest tier"
             ),
-        },
-        use_container_width=True
+            "Balance Tier": st.column_config.TextColumn(
+                "Balance Tier",
+                help="Balance tier for interest calculation"
+            ),
+            "Interest Rate": st.column_config.TextColumn(
+                "Interest Rate",
+                help="Interest rate for this tier"
+            ),
+            "Requirements": st.column_config.TextColumn(
+                "Requirements",
+                help="Requirements to qualify for this interest rate"
+            )
+        }
     )
     
     # Add explanatory notes
