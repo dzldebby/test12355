@@ -521,6 +521,21 @@ st.markdown("""
             max-width: 300px !important;
         }
     }
+
+    /* Reduce title padding */
+    .block-container {
+        padding-top: 1rem !important;
+    }
+
+    /* Additional title spacing adjustments */
+    .stTitle {
+        margin-top: -2rem;
+    }
+
+    /* Reduce padding between subheader and horizontal line */
+    .stSubheader {
+        margin-bottom: -1rem !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -529,7 +544,6 @@ def streamlit_app():
         # User identification
         user_id = identify_user()
         variant = assign_variant()
-
 
         # Track page view
         if MIXPANEL_ENABLED:
@@ -543,257 +557,209 @@ def streamlit_app():
         
         st.title("🏦 SmartSaverSG")
         st.subheader("Maximize Your Savings with Bank Interest Calculator")
-        
+        st.markdown("---")
 
-        # with st.expander("💰 About SmartSaverSG", expanded=False):
-        #     st.write("""
-        #         Interest rate updated as of 1 Feb 2025.
-        #     """)
-
-
-        # Requirements Section
-        st.write("##### Step 1: Enter Amount")
-        
         try:
 
-            # Add A/B test variations for the input interface
-            if variant == 'A':
-                # Variant A: Text input (original)
-                amount_str = st.text_input(
-                    "Enter amount to calculate interest for ($):", 
-                    value="10,000",
-                    help="Enter amount with commas (e.g., 100,000)"
-                )
-                investment_amount = int(amount_str.replace(",", ""))
-                
-                # Track page view
-                if MIXPANEL_ENABLED:
-                    mp.track(st.session_state.user_id, 'Savings Entered (Text Input)', {
-                        'savings': amount_str,
-                        'variant': variant
-                    })
+            col1, col2 = st.columns([1, 1])
 
-            else:
-                # Variant B: Slider input
-                amount_str = st.slider(
-                    "Select amount to calculate interest for ($)",
-                    min_value=0,
-                    max_value=1000000,
-                    value=10000,
-                    step=1000,
-                    format="$%d"
-                )
-                investment_amount = int(amount_str)
-
-                                # Track page view
-                if MIXPANEL_ENABLED:
-                    mp.track(st.session_state.user_id, 'Savings Entered (Slider)', {
-                        'savings': amount_str,
-                        'variant': variant
-                    })
 
 
             
-            # Basic Requirements
-            st.write("##### Step 2: Enter Basic & Optional Requirements")
-            
-            with st.expander("✅ Basic Requirements", expanded=True):
-                # Deposit Amount
-                deposit_amount = st.number_input(
-                    "Deposit Amount ($)",
-                    min_value=0,
-                    value=150000,
-                    step=1000,
-                    format="%d"
-                )
-                st.caption(f"Selected Deposit: ${format_number(deposit_amount)}")
+            try:
+                with col1:
+                    # col 1 start # 
 
-                # Card Spend
-                card_spend = st.number_input(
-                    "Card Spend per Month ($)",
-                    min_value=0,
-                    value=500,
-                    step=100,
-                    format="%d"
-                )
-                st.caption(f"Selected Card Spend: ${format_number(card_spend)}")
-
-                # Salary Credit
-                has_salary = st.toggle(
-                    "Credit Salary to Bank Account",
-                    help="Select this if your salary is credited to your bank account monthly"
-                )
-                if has_salary:
-                    salary_amount = st.number_input(
-                        "Monthly Salary Amount ($)",
-                        min_value=0,
-                        value=2000,
-                        step=500,
-                        format="%d"
-                    )
-                    st.caption(f"Selected Salary: ${format_number(salary_amount)}")
-                else:
-                    salary_amount = 0
-
-                # Number of Bill Payments
-                giro_count = st.number_input(
-                    "Number of Bill Payments",
-                    min_value=0,
-                    max_value=10,
-                    value=0,
-                    step=1
-                )
-
-            # Advanced Requirements
-            with st.expander("📈 Bank-specific Bonuses (Optional)", expanded=False):
-                has_insurance = st.toggle(
-                    "Have Insurance Products",
-                    help="""Select this if you have purchased eligible insurance products from any of the following banks: Standard Chartered, OCBC 360 (min. S$2,000 annual insurance premium), BOC SmartSaver 
-                        """
-                )
-                has_investments = st.toggle(
-                    "Have Investments",
-                    help="""Select this if you have any of the following investments:\n
-                    • SC BonusSaver: Purchase eligible unit trust\n
-                    • OCBC 360: Min. S$20,000 in eligible investment"""
-                )
-                increased_balance = st.toggle(
-                    "Increased Account Balance",
-                    help="""Select this if you meet any of the following:\n
-                    • OCBC 360: Min. S$500 increase from previous month"""
-                )
-                grew_wealth = st.toggle(
-                    "Grew Wealth",
-                    help="""Select this if you meet any of the following:\n
-                    • OCBC 360: Increase investments or insurance by S$200"""
-                )
-
-            # Create base requirements dictionary (moved outside tabs)
-            base_requirements = {
-                'has_salary': bool(has_salary and salary_amount >= 2000),
-                'salary_amount': salary_amount,
-                'spend_amount': card_spend,
-                'giro_count': giro_count,
-                'has_insurance': has_insurance,
-                'has_investments': has_investments,
-                'increased_balance': increased_balance,
-                'grew_wealth': grew_wealth
-            }
-
-            # Create a more descriptive section for the two options
-            st.write("##### Step 3: Select your calculation method:")
-            
-            # Create tabs with clearer descriptions and icons
-            tab1, tab2 = st.tabs([
-                "🏦 Single Bank Calculator",
-                "🔄 Multi-Bank Optimizer"
-            ])
-            
-            with tab1:
-                st.markdown("""
-                    **Calculate interest for a single bank account***""")
-
-
-                st.markdown(""" - See detailed breakdowns for each bank""", help="Banks included: Chocolate Financial, UOB One, SC BonusSaver, BOC SmartSaver, OCBC 360")
-                
-                st.markdown(""" - Compare base rates and bonus interest""")
-
-
-
-                if st.button("Calculate Single Bank Interest", type="primary", key="single_bank_calc"):
-                    track_calculation('single_bank', investment_amount, base_requirements)
-
-                    if MIXPANEL_ENABLED:
-                        mp.track(st.session_state.user_id, 'Calculate Single Bank Interest', {
-                            'type': 'single_bank',
-                            'amount': investment_amount,
-                            'variant': variant
-                        })
-
-                    with st.spinner("Calculating interest rates..."):
-                        # Calculate and display results for each bank
-                        bank_results = []
-                        for bank_name in ["UOB One", "SC BonusSaver", "OCBC 360", "BOC SmartSaver", "Chocolate"]:
-                            bank_reqs = base_requirements.copy()
-                            
-                            # Special handling for UOB One
-                            if bank_name == 'UOB One':
-                                bank_reqs['has_salary'] = base_requirements.get('has_salary', False)
-                                bank_reqs['salary_amount'] = base_requirements.get('salary_amount', 0)
-                            
-                            results = calculate_bank_interest(investment_amount, banks_data[bank_name], bank_reqs)
-                            bank_results.append({
-                                'bank': bank_name,
-                                'monthly_interest': results['total_interest']/12,
-                                'annual_interest': results['total_interest'],
-                                'breakdown': results['breakdown']
+                    # Requirements Section
+                    st.write("##### Step 1: Enter Amount")
+                    # Add A/B test variations for the input interface
+                    if variant == 'A':
+                        # Variant A: Text input (original)
+                        amount_str = st.text_input(
+                            "Enter amount to calculate interest for ($):", 
+                            value="10,000",
+                            help="Enter amount with commas (e.g., 100,000)"
+                        )
+                        investment_amount = int(amount_str.replace(",", ""))
+                        
+                        # Track page view
+                        if MIXPANEL_ENABLED:
+                            mp.track(st.session_state.user_id, 'Savings Entered (Text Input)', {
+                                'savings': amount_str,
+                                'variant': variant
                             })
-                        
-                        # Sort banks by interest rate (highest to lowest)
-                        bank_results.sort(key=lambda x: x['annual_interest'], reverse=True)
-                        
-                        # Display Optimal Bank First
-                        optimal_bank = bank_results[0]
-                        st.write("### 🏆 Optimal Choice")
-                        st.success(f"**{optimal_bank['bank']}** offers the highest interest rate!")
-                        st.metric("Monthly Interest", f"${optimal_bank['monthly_interest']:,.2f}")
-                        st.metric("Annual Interest", f"${optimal_bank['annual_interest']:,.2f}")
-                        
-                        # Show breakdown for optimal bank
-                        if optimal_bank['breakdown']:
-                            st.write("Interest Breakdown:")
-                            for tier in optimal_bank['breakdown']:
-                                try:
-                                    # Convert all values to basic Python types first
-                                    amount_val = float(tier['amount_in_tier'])
-                                    rate_val = float(tier['tier_rate'])
-                                    desc_val = str(tier['description']).strip()
-                                    
-                                    # Build string piece by piece
-                                    bullet = "•"
-                                    amount_str = "${:,.2f}".format(amount_val)
-                                    rate_str = "{:.2f}%".format(rate_val * 100)
-                                    
-                                    # Combine with explicit spaces
-                                    line = f"{bullet} {amount_str} at {rate_str} - {desc_val}"
-                                    
-                                    # Display using text
-                                    st.text(line)
-                                    
-                                except Exception as e:
-                                    st.error(f"Error formatting tier {i}: {str(e)}")
-                            st.markdown("[See section below for more details →](#details-of-all-banks)")
-                        
-                        # Divider between optimal and all results
-                        st.markdown("---")
-                        
-                        # Display All Bank Results
-                        st.write("### Details of all banks")
+
+                    else:
+                        # Variant B: Slider input
+                        amount_str = st.slider(
+                            "Select amount to calculate interest for ($)",
+                            min_value=0,
+                            max_value=1000000,
+                            value=10000,
+                            step=1000,
+                            format="$%d"
+                        )
+                        investment_amount = int(amount_str)
+
+                                        # Track page view
+                        if MIXPANEL_ENABLED:
+                            mp.track(st.session_state.user_id, 'Savings Entered (Slider)', {
+                                'savings': amount_str,
+                                'variant': variant
+                            })
 
 
-                        # Define bank URLs
-                        bank_urls = {
-                            "UOB One": "https://www.uob.com.sg/personal/save/chequeing/one-account.page",
-                            "OCBC 360": "https://www.ocbc.com/personal-banking/deposits/360-account",
-                            "SC BonusSaver": "https://www.sc.com/sg/save/current-accounts/bonussaver/",
-                            "BOC SmartSaver": "https://www.bankofchina.com/sg/bocproduct/pb/201702/t20170214_8480534.html",
-                            "Chocolate": "https://www.chocolatefinance.com/#Benefits"
-                        }
-                        
-
-
-                        for result in bank_results:
-                            with st.expander(f"{result['bank']} Details", expanded=False):
-                                # Create two columns for Monthly and Annual Interest
-                                st.metric("Monthly Interest", f"${result['monthly_interest']:,.2f}")
-                                st.metric("Annual Interest", f"${result['annual_interest']:,.2f}")
-
-                                                                # Add bank URL if available
+                    
+                    # Basic Requirements
+                    st.write("##### Step 2: Enter Basic & Optional Requirements")
+                    
+                    with st.expander("✅ Basic Requirements", expanded=True):
+                        # Salary Credit
+                        has_salary = st.toggle(
+                            "Credit Salary of >SGD$2,000 to Bank Account",
+                            help="Select this if your salary of >$2K is credited to your bank account monthly"
+                        )
+                        if has_salary:
+                            # assume salary amount >2K
+                            salary_amount = 2001
+                            # st.caption(f"Selected Salary: ${format_number(salary_amount)}")
+                        else:
+                            salary_amount = 0
                             
-                                # Show breakdown with fixed formatting
-                                if result['breakdown']:
+                        # Create two columns for Card Spend and Bill Payments
+                        spend_col, giro_col = st.columns(2)
+                        
+                        with spend_col:
+                            # Card Spend
+                            card_spend = st.number_input(
+                                "Card Spend per Month ($)",
+                                min_value=0,
+                                value=500,
+                                step=100,
+                                format="%d"
+                            )
+                            st.caption(f"Selected Card Spend: ${format_number(card_spend)}")
+
+                        with giro_col:
+                            # Number of Bill Payments
+                            giro_count = st.number_input(
+                                "Number of Bill Payments",
+                                min_value=0,
+                                max_value=10,
+                                value=0,
+                                step=1
+                            )
+                            st.caption(f"Selected Bill Payments: {giro_count}")
+
+                    # Advanced Requirements
+                    with st.expander("📈 Bank-specific Bonuses (Optional)", expanded=False):
+                        has_insurance = st.toggle(
+                            "Have Insurance Products",
+                            help="""Select this if you have purchased eligible insurance products from any of the following banks: Standard Chartered, OCBC 360 (min. S$2,000 annual insurance premium), BOC SmartSaver 
+                                """
+                        )
+                        has_investments = st.toggle(
+                            "Have Investments",
+                            help="""Select this if you have any of the following investments:\n
+                            • SC BonusSaver: Purchase eligible unit trust\n
+                            • OCBC 360: Min. S$20,000 in eligible investment"""
+                        )
+                        increased_balance = st.toggle(
+                            "Increased Account Balance",
+                            help="""Select this if you meet any of the following:\n
+                            • OCBC 360: Min. S$500 increase from previous month"""
+                        )
+                        grew_wealth = st.toggle(
+                            "Grew Wealth",
+                            help="""Select this if you meet any of the following:\n
+                            • OCBC 360: Increase investments or insurance by S$200"""
+                        )
+
+                    # Create base requirements dictionary (moved outside tabs)
+                    base_requirements = {
+                        'has_salary': bool(has_salary and salary_amount >= 2000),
+                        'salary_amount': salary_amount,
+                        'spend_amount': card_spend,
+                        'giro_count': giro_count,
+                        'has_insurance': has_insurance,
+                        'has_investments': has_investments,
+                        'increased_balance': increased_balance,
+                        'grew_wealth': grew_wealth
+                    }
+                # col 1 end #
+
+                # col 2 start #
+                with col2:
+
+                    # Create a more descriptive section for the two options
+                    st.write("##### Step 3: Select your calculation method:")
+                    
+                    # Create tabs with clearer descriptions and icons
+                    tab1, tab2 = st.tabs([
+                        "🏦 Single Bank Calculator",
+                        "🔄 Multi-Bank Optimizer"
+                    ])
+                    
+                    with tab1:
+                        # Initialize the show_description state if it doesn't exist
+                        if 'show_description' not in st.session_state:
+                            st.session_state.show_description = True
+
+                        # Button needs to be before the conditional display
+                        calculate_clicked = st.button("Calculate Single Bank Interest", type="primary", key="single_bank_calc")
+                        if calculate_clicked:
+                            st.session_state.show_description = False
+                            track_calculation('single_bank', investment_amount, base_requirements)
+
+                            if MIXPANEL_ENABLED:
+                                mp.track(st.session_state.user_id, 'Calculation Performed', {
+                                    'type': 'single_bank',
+                                    'amount': investment_amount,
+                                    'has_salary': has_salary,
+                                    'card_spend': card_spend,
+                                    'giro_count': giro_count,
+                                    'variant': variant
+                                })
+
+                        if st.session_state.show_description:
+                            st.markdown("""
+                                **Calculate interest for a single bank account***""")
+                            st.markdown(""" - See detailed breakdowns for each bank""", help="Banks included: Chocolate Financial, UOB One, SC BonusSaver, BOC SmartSaver, OCBC 360")
+                            st.markdown(""" - Compare base rates and bonus interest""")
+
+                        if calculate_clicked:
+                            with st.spinner("Calculating interest rates..."):
+                                # Calculate and display results for each bank
+                                bank_results = []
+                                for bank_name in ["UOB One", "SC BonusSaver", "OCBC 360", "BOC SmartSaver", "Chocolate"]:
+                                    bank_reqs = base_requirements.copy()
+                                    
+                                    # Special handling for UOB One
+                                    if bank_name == 'UOB One':
+                                        bank_reqs['has_salary'] = base_requirements.get('has_salary', False)
+                                        bank_reqs['salary_amount'] = base_requirements.get('salary_amount', 0)
+                                    
+                                    results = calculate_bank_interest(investment_amount, banks_data[bank_name], bank_reqs)
+                                    bank_results.append({
+                                        'bank': bank_name,
+                                        'monthly_interest': results['total_interest']/12,
+                                        'annual_interest': results['total_interest'],
+                                        'breakdown': results['breakdown']
+                                    })
+                                
+                                # Sort banks by interest rate (highest to lowest)
+                                bank_results.sort(key=lambda x: x['annual_interest'], reverse=True)
+                                
+                                # Display Optimal Bank First
+                                optimal_bank = bank_results[0]
+                                st.success(f"🏆 Optimal Choice: **{optimal_bank['bank']}** offers the highest interest rate!")
+                                st.metric("Monthly Interest", f"${optimal_bank['monthly_interest']:,.2f}")
+                                st.metric("Annual Interest", f"${optimal_bank['annual_interest']:,.2f}")
+                                
+                                # Show breakdown for optimal bank
+                                if optimal_bank['breakdown']:
                                     st.write("Interest Breakdown:")
-                                    for tier in result['breakdown']:
+                                    for tier in optimal_bank['breakdown']:
                                         try:
                                             # Convert all values to basic Python types first
                                             amount_val = float(tier['amount_in_tier'])
@@ -813,105 +779,168 @@ def streamlit_app():
                                             
                                         except Exception as e:
                                             st.error(f"Error formatting tier {i}: {str(e)}")
-
-                                                            
-                                if result['bank'] == "Chocolate":
-                                    st.write("Notes:")
-                                    st.text("• Chocolate Finance targets 3% p.a. on any amount above $50K, but since this is only a target and not guaranteed, it has not been included in the calculation.")                
-
-
-                                if result['bank'] in bank_urls:
-                                    st.markdown(f"Verify by visiting [{result['bank']}'s website →]({bank_urls[result['bank']]})")
+                                    st.markdown("[See section below for more details →](#details-of-all-banks)")
+                                
+                                # Divider between optimal and all results
+                                st.markdown("---")
+                                
+                                # Display All Bank Results
+                                st.write("### Details of all banks")
 
 
-            
-            with tab2:
-                st.write("""
-                    **Optimize across multiple banks**
-                    - Find the best combination of accounts
-                    - Maximize your total interest earned
-                    - Get recommendations for salary crediting and spending
-                """)
-                
-                if st.button("Calculate Optimal Distribution", type="primary", key="multi_bank_calc"):
-                    track_calculation('multi_bank', investment_amount, base_requirements)
-                    with st.spinner("Optimizing distribution..."):
-                        # First optimize deposit distribution
-                        top_solutions = optimize_bank_distribution(
-                            investment_amount,
-                            banks_data,
-                            base_requirements
-                        )
+                                # Define bank URLs
+                                bank_urls = {
+                                    "UOB One": "https://www.uob.com.sg/personal/save/chequeing/one-account.page",
+                                    "OCBC 360": "https://www.ocbc.com/personal-banking/deposits/360-account",
+                                    "SC BonusSaver": "https://www.sc.com/sg/save/current-accounts/bonussaver/",
+                                    "BOC SmartSaver": "https://www.bankofchina.com/sg/bocproduct/pb/201702/t20170214_8480534.html",
+                                    "Chocolate": "https://www.chocolatefinance.com/#Benefits"
+                                }
+                                
+
+
+                                for result in bank_results:
+                                    with st.expander(f"{result['bank']} Details", expanded=False):
+                                        # Create two columns for Monthly and Annual Interest
+                                        st.metric("Monthly Interest", f"${result['monthly_interest']:,.2f}")
+                                        st.metric("Annual Interest", f"${result['annual_interest']:,.2f}")
+
+                                                                        # Add bank URL if available
+                                    
+                                        # Show breakdown with fixed formatting
+                                        if result['breakdown']:
+                                            st.write("Interest Breakdown:")
+                                            for tier in result['breakdown']:
+                                                try:
+                                                    # Convert all values to basic Python types first
+                                                    amount_val = float(tier['amount_in_tier'])
+                                                    rate_val = float(tier['tier_rate'])
+                                                    desc_val = str(tier['description']).strip()
+                                                    
+                                                    # Build string piece by piece
+                                                    bullet = "•"
+                                                    amount_str = "${:,.2f}".format(amount_val)
+                                                    rate_str = "{:.2f}%".format(rate_val * 100)
+                                                    
+                                                    # Combine with explicit spaces
+                                                    line = f"{bullet} {amount_str} at {rate_str} - {desc_val}"
+                                                    
+                                                    # Display using text
+                                                    st.text(line)
+                                                    
+                                                except Exception as e:
+                                                    st.error(f"Error formatting tier {i}: {str(e)}")
+
+                                                                    
+                                        if result['bank'] == "Chocolate":
+                                            st.write("Notes:")
+                                            st.text("• Chocolate Finance targets 3% p.a. on any amount above $50K, but since this is only a target and not guaranteed, it has not been included in the calculation.")                
+
+
+                                        if result['bank'] in bank_urls:
+                                            st.markdown(f"Verify by visiting [{result['bank']}'s website →]({bank_urls[result['bank']]})")
+
+
+                    
+                    with tab2:
+                        st.write("""
+                            **Optimize across multiple banks**
+                            - Find the best combination of accounts
+                            - Maximize your total interest earned
+                            - Get recommendations for salary crediting and spending
+                        """)
                         
-                        # Then optimize spend allocation for each solution
-                        for solution in top_solutions:
-                            if solution['total_interest'] > 0:
-                                spend_allocation, new_total_interest, interest_breakdown = optimize_spend_allocation(
-                                    card_spend,
+                        if st.button("Calculate Optimal Distribution", type="primary", key="multi_bank_calc"):
+                            track_calculation('multi_bank', investment_amount, base_requirements)
+                            with st.spinner("Optimizing distribution..."):
+                                # First optimize deposit distribution
+                                top_solutions = optimize_bank_distribution(
+                                    investment_amount,
                                     banks_data,
-                                    solution['distribution'],
                                     base_requirements
                                 )
                                 
-                                # Update solution with spend allocation
-                                solution['spend_allocation'] = spend_allocation
-                                solution['total_interest'] = new_total_interest
-                                solution['interest_breakdown'] = interest_breakdown
-                        
-                        # Display optimization results
-                        for i, solution in enumerate(top_solutions):
-                            if solution['total_interest'] > 0:
-                                with st.expander(f"💡 Optimization Scenario {i+1}", expanded=(i==0)):
-                                    st.metric(
-                                        "Monthly Interest",
-                                        f"${solution['total_interest']/12:,.2f}"
-                                    )
-                                    st.metric(
-                                        "Annual Interest",
-                                        f"${solution['total_interest']:,.2f}"
-                                    )
+                                # Then optimize spend allocation for each solution
+                                for solution in top_solutions:
+                                    if solution['total_interest'] > 0:
+                                        spend_allocation, new_total_interest, interest_breakdown = optimize_spend_allocation(
+                                            card_spend,
+                                            banks_data,
+                                            solution['distribution'],
+                                            base_requirements
+                                        )
                                         
-                                    # Deposit Distribution
-                                    st.write("### 💰 Recommended Deposit Distribution")
-                                    for bank, amount in solution['distribution'].items():
-                                        if amount > 0:
-                                            st.write(f"• {bank}: ${amount:,.2f}")
-                                        
-                                    # Credit Card Spend Distribution
-                                    if solution.get('spend_allocation'):
-                                        st.write("\n### 💳 Credit Card Spend Distribution")
-                                        total_allocated = sum(solution['spend_allocation'].values())
-                                        remaining_spend = card_spend - total_allocated
-                                        
-                                        for bank, spend in solution['spend_allocation'].items():
-                                            percentage = (spend / card_spend) * 100
-                                            st.write(f"• {bank}: ${spend:,.2f} ({percentage:.1f}%)")
-                                        
-                                        if remaining_spend > 0:
-                                            percentage = (remaining_spend / card_spend) * 100
-                                            st.write(f"• Remaining unallocated spend: ${remaining_spend:,.2f} ({percentage:.1f}%)")
-                                        
-                                    # Salary Credit Info
-                                    if base_requirements['has_salary'] and solution['salary_bank']:
-                                        st.info(f"💡 Credit your salary to: {solution['salary_bank']}")
+                                        # Update solution with spend allocation
+                                        solution['spend_allocation'] = spend_allocation
+                                        solution['total_interest'] = new_total_interest
+                                        solution['interest_breakdown'] = interest_breakdown
+                                
+                                # Display optimization results
+                                for i, solution in enumerate(top_solutions):
+                                    if solution['total_interest'] > 0:
+                                        with st.expander(f"💡 Optimization Scenario {i+1}", expanded=(i==0)):
+                                            st.metric(
+                                                "Monthly Interest",
+                                                f"${solution['total_interest']/12:,.2f}"
+                                            )
+                                            st.metric(
+                                                "Annual Interest",
+                                                f"${solution['total_interest']:,.2f}"
+                                            )
+                                                
+                                            # Deposit Distribution
+                                            st.write("### 💰 Recommended Deposit Distribution")
+                                            for bank, amount in solution['distribution'].items():
+                                                if amount > 0:
+                                                    st.write(f"• {bank}: ${amount:,.2f}")
+                                                
+                                            # Credit Card Spend Distribution
+                                            if solution.get('spend_allocation'):
+                                                st.write("\n### 💳 Credit Card Spend Distribution")
+                                                total_allocated = sum(solution['spend_allocation'].values())
+                                                remaining_spend = card_spend - total_allocated
+                                                
+                                                for bank, spend in solution['spend_allocation'].items():
+                                                    percentage = (spend / card_spend) * 100
+                                                    st.write(f"• {bank}: ${spend:,.2f} ({percentage:.1f}%)")
+                                                
+                                                if remaining_spend > 0:
+                                                    percentage = (remaining_spend / card_spend) * 100
+                                                    st.write(f"• Remaining unallocated spend: ${remaining_spend:,.2f} ({percentage:.1f}%)")
+                                                
+                                            # Salary Credit Info
+                                            if base_requirements['has_salary'] and solution['salary_bank']:
+                                                st.info(f"💡 Credit your salary to: {solution['salary_bank']}")
 
 
 
-                        # Add disclaimer in red
-            st.markdown("""
-                <div style='background-color: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
-                    <span style='color: #c62828; font-weight: bold;'>⚠️ Disclaimer:</span>
-                    <span style='color: #c62828;'>
-                        This calculator provides general information only and does not constitute financial advice. 
-                        Please verify all rates with the respective banks and consult a financial advisor for personalized recommendations.
-                    </span>
-                </div>
-            """, unsafe_allow_html=True)
-        
+                                # Add disclaimer in red
+                    st.markdown("""
+                        <div style='background-color: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
+                            <span style='color: #c62828; font-weight: bold;'>⚠️ Disclaimer:</span>
+                            <span style='color: #c62828;'>
+                                This calculator provides general information only and does not constitute financial advice. 
+                                Please verify all rates with the respective banks and consult a financial advisor for personalized recommendations.
+                            </span>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    # col 2 end #
+
+
+
+
+            # This is within col1 already
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
+                st.error(traceback.format_exc())
+
+        # This closes the first try block within the 2-column layout        
         except Exception as e:
+            # Handle UI-specific errors
             st.error(f"Error: {str(e)}")
             st.error(traceback.format_exc())
 
+    # This belongs to the user id try, not part of the scope
     except Exception as e:
         st.error(f"Error: {str(e)}")
         st.error(traceback.format_exc())  
