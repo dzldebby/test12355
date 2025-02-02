@@ -652,7 +652,7 @@ def streamlit_app():
                             st.caption(f"Selected Bill Payments: {giro_count}")
 
                     # Advanced Requirements
-                    with st.expander("📈 Bank-specific Bonuses (Optional)", expanded=False):
+                    with st.expander("📈 Advanced Requirements (Optional)", expanded=False):
                         has_insurance = st.toggle(
                             "Have Insurance Products",
                             help="""Select this if you have purchased eligible insurance products from any of the following banks: Standard Chartered, OCBC 360 (min. S$2,000 annual insurance premium), BOC SmartSaver 
@@ -686,6 +686,16 @@ def streamlit_app():
                         'increased_balance': increased_balance,
                         'grew_wealth': grew_wealth
                     }
+
+                    tutorial_col, method_col, rates_col = st.columns(3)
+                    with tutorial_col:
+                        st.markdown("[How to use the calculator 📚](Tutorial)")
+                    with method_col:
+                        st.markdown("[Calculation Methodology 📝](Methodology)")
+                    with rates_col:
+                        st.markdown("[What interest rates are used?](Interest_Rates)")
+
+   
                 # col 1 end #
 
                 # col 2 start #
