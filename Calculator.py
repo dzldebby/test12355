@@ -563,14 +563,14 @@ def streamlit_app():
                 padding: 0.5rem 0;
             }
             .main-header h1 {
-                color: #fff ;
+                color: var(--text-color, currentColor);
                 font-size: 3rem !important;
                 font-weight: 700 !important;
                 margin-bottom: 0.2rem !important;
                 line-height: 1.2 !important;
             }
             .main-header h3 {
-                color: #fff;
+                color: var(--text-color, currentColor);
                 font-size: 1.5rem !important;
                 font-weight: 400 !important;
                 margin-bottom: 0.2rem !important;
@@ -579,7 +579,8 @@ def streamlit_app():
             .header-divider {
                 width: 100%;
                 height: 3px;
-                background: #fff;
+                background: var(--text-color, currentColor);
+                opacity: 0.7;
                 margin: 0.5rem 0 1rem 0;
                 border: none;
             }
