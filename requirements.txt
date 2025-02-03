@@ -4,3 +4,4 @@ numpy
 scipy
 mixpanel-python
 mixpanel
+requests==2.31.0
