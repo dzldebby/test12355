@@ -10,7 +10,9 @@ from analytics import (
     mp,
     MIXPANEL_ENABLED,
 )
-
+from browser_detection import browser_detection_engine
+from streamlit_javascript import st_javascript
+from user_agents import parse
 
 def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
     """Calculate interest based on the bank's tier structure and requirements"""
@@ -584,6 +586,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def streamlit_app():
+
+
+
+    ua_string = st_javascript("""window.navigator.userAgent;""")
+    user_agent = parse(ua_string)
+    st.session_state.is_session_pc = user_agent.is_pc
+
+
     try:
         # User identification
         user_id = identify_user()
@@ -600,47 +610,36 @@ def streamlit_app():
         banks_data = process_interest_rates()
         
         # Custom CSS for the header
-        st.markdown("""
+        st.markdown(f"""
             <style>
-            .main-header {
+            .main-header {{
                 text-align: center;
                 padding: 0.5rem 0;
-            }
-            .main-header h1 {
+            }}
+            .main-header h1 {{
                 color: var(--text-color, currentColor);
-                font-size: 3rem !important;
+                font-size: {"3rem" if st.session_state.is_session_pc else "2.5rem"} !important;
                 font-weight: 700 !important;
                 margin-bottom: 0.1rem !important;
                 line-height: 1.2 !important;
-            }
-            .main-header h3 {
+            }}
+            .main-header h3 {{
                 color: var(--text-color, currentColor);
                 font-size: 1.5rem !important;
                 font-weight: 400 !important;
                 margin-bottom: 0.1rem !important;
                 line-height: 1.2 !important;
-            }
-            @media (max-width: 768px) {
-                .main-header h3 {
-                    display: none !important;
-                }
-
-                .header-divider {
-                    display: none !important;
-                }
-
-                .main-header h1 {
-                    font-size: 2.5rem !important;
-                }
-            }
-            .header-divider {
+                display: {"block" if st.session_state.is_session_pc else "none"} !important;
+            }}
+            .header-divider {{
                 width: 100%;
                 height: 3px;
                 background: var(--text-color, currentColor);
                 opacity: 0.7;
                 margin: 1em 0;
                 border: none;
-            }
+                display: {"block" if st.session_state.is_session_pc else "none"} !important;
+            }}
             </style>
             
             <div class="main-header">
@@ -1133,4 +1132,5 @@ def optimize_spend_allocation(total_spend, banks_data, deposit_amounts, base_req
     return best_allocation, best_total_interest, best_breakdown
 
 if __name__ == "__main__":
+
     streamlit_app()
