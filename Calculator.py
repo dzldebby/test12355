@@ -610,22 +610,35 @@ def streamlit_app():
                 color: var(--text-color, currentColor);
                 font-size: 3rem !important;
                 font-weight: 700 !important;
-                margin-bottom: 0.2rem !important;
+                margin-bottom: 0.1rem !important;
                 line-height: 1.2 !important;
             }
             .main-header h3 {
                 color: var(--text-color, currentColor);
                 font-size: 1.5rem !important;
                 font-weight: 400 !important;
-                margin-bottom: 0.2rem !important;
+                margin-bottom: 0.1rem !important;
                 line-height: 1.2 !important;
+            }
+            @media (max-width: 768px) {
+                .main-header h3 {
+                    display: none !important;
+                }
+
+                .header-divider {
+                    display: none !important;
+                }
+
+                .main-header h1 {
+                    font-size: 2.5rem !important;
+                }
             }
             .header-divider {
                 width: 100%;
                 height: 3px;
                 background: var(--text-color, currentColor);
                 opacity: 0.7;
-                margin: 0.5rem 0 1rem 0;
+                margin: 1em 0;
                 border: none;
             }
             </style>
