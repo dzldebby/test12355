@@ -1,10 +1,36 @@
 import streamlit as st
+import pandas as pd
+from datetime import datetime
+import os
 from analytics import (
     identify_user, 
     track_calculation, 
     mp,
     MIXPANEL_ENABLED,
 )
+
+# Create feedback directory if it doesn't exist
+FEEDBACK_DIR = "feedback"
+FEEDBACK_FILE = os.path.join(FEEDBACK_DIR, "feedback_responses.csv")
+
+if not os.path.exists(FEEDBACK_DIR):
+    os.makedirs(FEEDBACK_DIR)
+
+def save_feedback_to_csv(feedback_data):
+    """Save feedback data to a CSV file"""
+    feedback_data['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Convert to DataFrame
+    df_new = pd.DataFrame([feedback_data])
+    
+    # Append to existing CSV or create new one
+    if os.path.exists(FEEDBACK_FILE):
+        df_existing = pd.read_csv(FEEDBACK_FILE)
+        df_updated = pd.concat([df_existing, df_new], ignore_index=True)
+    else:
+        df_updated = df_new
+    
+    df_updated.to_csv(FEEDBACK_FILE, index=False)
 
 def show_feedback_page():
     # Page config
@@ -92,36 +118,28 @@ def show_feedback_page():
         
         if submitted:
             try:
-                # Track feedback in Mixpanel
-                if MIXPANEL_ENABLED:
-                    feedback_data = {
-                        'rating': rating,
-                        'usage': usage,
-                        'useful_features': [k for k, v in useful_features.items() if v],
-                        'has_suggestions': bool(suggestions.strip()),
-                        'has_feedback': bool(feedback.strip()),
-                        'provided_email': bool(email.strip())
-                    }
-                    
-                    # Add actual feedback content for analysis
-                    if suggestions.strip():
-                        feedback_data['suggestions'] = suggestions
-                    if feedback.strip():
-                        feedback_data['feedback'] = feedback
-                    if email.strip():
-                        feedback_data['email'] = email
-
-                    mp.track(st.session_state.user_id, 'Feedback Submitted', feedback_data)
+                # Prepare feedback data
+                feedback_data = {
+                    'rating': rating,
+                    'usage': usage,
+                    'useful_features': [k for k, v in useful_features.items() if v],
+                    'suggestions': suggestions,
+                    'feedback': feedback,
+                    'email': email
+                }
                 
-                st.success("""
-                    Thank you for your feedback! We appreciate your help in improving SmartSaverSG.
-                    
-                    Feel free to check out the [GitHub repository](https://github.com/yourusername/smartsaversg) 
-                    if you'd like to contribute or follow the project's development.
-                """)
+                # Save to CSV
+                save_feedback_to_csv(feedback_data)
+                
+                # Track in Mixpanel if enabled
+                if MIXPANEL_ENABLED:
+                    mp.track('Feedback Submitted', feedback_data)
+                
+                st.success("Thank you for your feedback! We appreciate your input.")
                 
             except Exception as e:
-                st.error(f"Error submitting feedback: {str(e)}")
+                st.error(f"There was an error submitting your feedback. Please try again later.")
+                print(f"Error saving feedback: {str(e)}")
 
     # Add link back to main app
     st.markdown("""
