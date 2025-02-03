@@ -555,10 +555,43 @@ def streamlit_app():
         # Then: Load interest rates data
         banks_data = process_interest_rates()
         
-        st.title("🏦 SmartSaverSG")
-        st.subheader("Maximize Your Savings with Bank Interest Calculator")
-        st.markdown("---")
-
+        # Custom CSS for the header
+        st.markdown("""
+            <style>
+            .main-header {
+                text-align: center;
+                padding: 0.5rem 0;
+            }
+            .main-header h1 {
+                color: #fff ;
+                font-size: 3rem !important;
+                font-weight: 700 !important;
+                margin-bottom: 0.2rem !important;
+                line-height: 1.2 !important;
+            }
+            .main-header h3 {
+                color: #fff;
+                font-size: 1.5rem !important;
+                font-weight: 400 !important;
+                margin-bottom: 0.2rem !important;
+                line-height: 1.2 !important;
+            }
+            .header-divider {
+                width: 100%;
+                height: 3px;
+                background: #fff;
+                margin: 0.5rem 0 1rem 0;
+                border: none;
+            }
+            </style>
+            
+            <div class="main-header">
+                <h1>🏦 SmartSaverSG</h1>
+                <h3>Maximize Your Savings with Bank Interest Calculator</h3>
+            </div>
+            <hr class="header-divider">
+        """, unsafe_allow_html=True)
+        
         try:
 
             col1, col2 = st.columns([1, 1])
