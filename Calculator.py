@@ -10,7 +10,6 @@ from analytics import (
     mp,
     MIXPANEL_ENABLED,
 )
-from browser_detection import browser_detection_engine
 from streamlit_javascript import st_javascript
 from user_agents import parse
 
