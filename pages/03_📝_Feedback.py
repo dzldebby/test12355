@@ -1,42 +1,17 @@
 import streamlit as st
-import pandas as pd
-from datetime import datetime
-import os
 from analytics import (
     identify_user, 
     track_calculation, 
     mp,
     MIXPANEL_ENABLED,
 )
-
-# Create feedback directory if it doesn't exist
-FEEDBACK_DIR = "feedback"
-FEEDBACK_FILE = os.path.join(FEEDBACK_DIR, "feedback_responses.csv")
-
-if not os.path.exists(FEEDBACK_DIR):
-    os.makedirs(FEEDBACK_DIR)
-
-def save_feedback_to_csv(feedback_data):
-    """Save feedback data to a CSV file"""
-    feedback_data['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    
-    # Convert to DataFrame
-    df_new = pd.DataFrame([feedback_data])
-    
-    # Append to existing CSV or create new one
-    if os.path.exists(FEEDBACK_FILE):
-        df_existing = pd.read_csv(FEEDBACK_FILE)
-        df_updated = pd.concat([df_existing, df_new], ignore_index=True)
-    else:
-        df_updated = df_new
-    
-    df_updated.to_csv(FEEDBACK_FILE, index=False)
+import requests
 
 def show_feedback_page():
     # Page config
     st.set_page_config(
         page_title="Feedback - SmartSaverSG",
-        page_icon="📝",
+        page_icon="",
         layout="wide"
     )
 
@@ -52,7 +27,7 @@ def show_feedback_page():
         </style>
     """, unsafe_allow_html=True)
 
-    st.title("📝 Feedback")
+    st.title("")
     st.write("""
         Help us improve SmartSaverSG! Your feedback is valuable in making this tool more useful for everyone.
         
@@ -128,27 +103,24 @@ def show_feedback_page():
                     'email': email
                 }
                 
-                # Save to CSV
-                save_feedback_to_csv(feedback_data)
+                # Send to FormSpree
+                response = requests.post(
+                    'https://formspree.io/f/xanqjlrb',  # Replace with your FormSpree form ID
+                    json=feedback_data
+                )
                 
-                # Track in Mixpanel if enabled
-                if MIXPANEL_ENABLED:
-                    mp.track('Feedback Submitted', feedback_data)
-                
-                st.success("Thank you for your feedback! We appreciate your input.")
+                if response.status_code == 200:
+                    # Track in Mixpanel if enabled
+                    if MIXPANEL_ENABLED:
+                        mp.track('Feedback Submitted', feedback_data)
+                    
+                    st.success("Thank you for your feedback! We appreciate your input.")
+                else:
+                    st.error("There was an error submitting your feedback. Please try again later.")
                 
             except Exception as e:
                 st.error(f"There was an error submitting your feedback. Please try again later.")
                 print(f"Error saving feedback: {str(e)}")
-
-    # Add link back to main app
-    st.markdown("""
-        <div style='position: fixed; bottom: 20px; left: 20px;'>
-            <a href="/" style='text-decoration: none;'>
-                ← Back to Calculator
-            </a>
-        </div>
-    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     show_feedback_page()
