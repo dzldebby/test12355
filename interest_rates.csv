@@ -1,4 +1,5 @@
 bank,tier_type,balance_tier,interest_rate,requirement_type,min_spend,min_salary,giro_count,salary_credit,cap_amount,remarks,
+UOB One,base,First $100K,0.05%,base,0,0,0,N,99999999,Base interest of 0.05%,
 UOB One,spend_only,1,0.65%,spend_only,500,0,0,N,75000,First $75k with card spend only,First $75K
 UOB One,spend_only,2,0.05%,spend_only,500,0,0,N,50000,Next $50k with card spend only,Next $50K (beyond $75K)
 UOB One,spend_only,3,0.05%,spend_only,500,0,0,N,25000,Next $25k with card spend only,Next $25K(beyond $100K)
@@ -32,8 +33,7 @@ OCBC 360,grow,2,2.40%,grow,0,0,0,N,25000,Next $25k with grow balance,
 BOC SmartSaver,base,Below $5K,0.15%,base,0,0,0,N,5000,Base interest for balance below $5K,
 BOC SmartSaver,base,$5K to below $20K,0.20%,base,0,0,0,N,15000,Base interest for $5K to below $20K,
 BOC SmartSaver,base,$20K to below $50K,0.30%,base,0,0,0,N,30000,Base interest for $20K to below $50K,
-BOC SmartSaver,base,$50K to below $100K,0.30%,base,0,0,0,N,50000,Base interest for
- $50K to below $100K,
+BOC SmartSaver,base,$50K to below $100K,0.30%,base,0,0,0,N,50000,Base interest for $50K to below $100K,
 BOC SmartSaver,base,$100K and above,0.40%,base,0,0,0,N,1000000,Base interest for $100K and above,
 BOC SmartSaver,wealth,1,2.40%,wealth,0,0,0,N,100000,Insurance purchase bonus,
 BOC SmartSaver,spend,1,0.50%,spend,500,0,0,N,100000,Card spend $500-$1499,

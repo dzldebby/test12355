@@ -73,102 +73,65 @@ def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
         # Initialize total interest
         total_interest = 0
         
-        # Add bonus interest based on requirements
-        if bank_requirements['spend_amount'] >= 500:
+        # Check if minimum spend requirement is met
+        has_spend = bank_requirements['spend_amount'] >= 500
+        has_salary = bank_requirements['has_salary']
+        has_giro = bank_requirements['giro_count'] >= 3
+        
+        if has_spend:
+            # If minimum spend met, check for highest applicable bonus rate
             remaining_amount = deposit_amount
             
-            # Check salary requirement
-            has_valid_salary = bank_requirements['has_salary'] and bank_requirements['salary_amount'] >= 2000
-            # Check GIRO requirement
-            has_valid_giro = bank_requirements.get('giro_count', 0) >= 3
-            
-            if has_valid_salary:
-                # Salary + Spend - Use tiers in order they appear in CSV
-                tiers = [t for t in bank_info['tiers'] if t['tier_type'] == 'salary']
-                # Remove the last tier (Above $150K) to process separately
-                main_tiers = [t for t in tiers if t['balance_tier'] != 'Above $150K']
-                excess_tier = next(t for t in tiers if t['balance_tier'] == 'Above $150K')
-                
-                # Calculate total amount up to $150K first
-                amount_up_to_150k = min(deposit_amount, 150000)
-                remaining_amount = amount_up_to_150k
-                
-                # Process first three tiers in order (First $75K, Next $50K, Next $25K)
-                for tier in main_tiers:
-                    cap = float(tier['cap_amount'])
-                    amount_in_tier = min(cap, remaining_amount)
-                    if amount_in_tier <= 0:
-                        break
-                        
-                    rate = float(str(tier['interest_rate']).strip('%')) / 100
-                    interest = amount_in_tier * rate
-                    total_interest += interest
-                    add_tier(amount_in_tier, rate, 
-                        f"Salary + Spend ({tier['balance_tier']})")
-                    remaining_amount -= amount_in_tier
-                
-                # Handle amount above $150K separately
-                if deposit_amount > 150000:
-                    excess_amount = deposit_amount - 150000
-                    rate = float(str(excess_tier['interest_rate']).strip('%')) / 100
-                    interest = excess_amount * rate
-                    total_interest += interest
-                    add_tier(excess_amount, rate,
-                        f"Salary + Spend ({excess_tier['balance_tier']})")
-            elif has_valid_giro and bank_requirements['spend_amount'] >= 500:
-                # GIRO + Spend - Use tiers in order they appear in CSV
-                tiers = [t for t in bank_info['tiers'] if t['tier_type'] == 'giro']
-                # Remove the last tier (Above $150K) to process separately
-                main_tiers = [t for t in tiers if t['balance_tier'] != 'Above $150K']
-                excess_tier = next(t for t in tiers if t['balance_tier'] == 'Above $150K')
-                
-                # Calculate total amount up to $150K first
-                amount_up_to_150k = min(deposit_amount, 150000)
-                remaining_amount = amount_up_to_150k
-                
-                # Process first three tiers in order (First $75K, Next $50K, Next $25K)
-                for tier in main_tiers:
-                    cap = float(tier['cap_amount'])
-                    amount_in_tier = min(cap, remaining_amount)
-                    if amount_in_tier <= 0:
-                        break
-                        
-                    rate = float(str(tier['interest_rate']).strip('%')) / 100
-                    interest = amount_in_tier * rate
-                    total_interest += interest
-                    add_tier(amount_in_tier, rate, 
-                        f"GIRO + Spend ({tier['balance_tier']})")
-                    remaining_amount -= amount_in_tier
-                
-                # Handle amount above $150K separately
-                if deposit_amount > 150000:
-                    excess_amount = deposit_amount - 150000
-                    rate = float(str(excess_tier['interest_rate']).strip('%')) / 100
-                    interest = excess_amount * rate
-                    total_interest += interest
-                    add_tier(excess_amount, rate,
-                        f"GIRO + Spend ({excess_tier['balance_tier']})")
-            elif bank_requirements['spend_amount'] >= 500:
-                # Spend only - Process tiers in order
-                tiers = [t for t in bank_info['tiers'] if t['tier_type'] == 'spend_only']
-                # Sort by balance_tier numerically
-                tiers = sorted(tiers, key=lambda x: int(x['balance_tier']))
-                
+            # Check salary + spend first as it has highest rates
+            if has_salary:
+                tiers = [t for t in bank_info['tiers'] if t['requirement_type'] == 'salary']
                 for tier in tiers:
-                    cap = float(tier['cap_amount'])
-                    amount_in_tier = min(cap, remaining_amount)
+                    amount_in_tier = min(remaining_amount, float(tier['cap_amount']))
                     if amount_in_tier <= 0:
                         break
-                        
                     rate = float(str(tier['interest_rate']).strip('%')) / 100
                     interest = amount_in_tier * rate
                     total_interest += interest
                     add_tier(amount_in_tier, rate,
-                        f"Spend Only ({tier['remarks']})")
+                        f"Salary + Spend ({tier['balance_tier']})")
                     remaining_amount -= amount_in_tier
+            
+            # Then check GIRO + Spend
+            elif has_giro:
+                tiers = [t for t in bank_info['tiers'] if t['requirement_type'] == 'giro']
+                for tier in tiers:
+                    amount_in_tier = min(remaining_amount, float(tier['cap_amount']))
+                    if amount_in_tier <= 0:
+                        break
+                    rate = float(str(tier['interest_rate']).strip('%')) / 100
+                    interest = amount_in_tier * rate
+                    total_interest += interest
+                    add_tier(amount_in_tier, rate,
+                        f"GIRO + Spend ({tier['balance_tier']})")
+                    remaining_amount -= amount_in_tier
+            
+            # Finally apply spend only rates
+            else:
+                tiers = [t for t in bank_info['tiers'] if t['requirement_type'] == 'spend_only']
+                for tier in tiers:
+                    amount_in_tier = min(remaining_amount, float(tier['cap_amount']))
+                    if amount_in_tier <= 0:
+                        break
+                    rate = float(str(tier['interest_rate']).strip('%')) / 100
+                    interest = amount_in_tier * rate
+                    total_interest += interest
+                    add_tier(amount_in_tier, rate,
+                        f"Spend Only ({tier['balance_tier']})")
+                    remaining_amount -= amount_in_tier
+        
         else:
-            # If no requirements met, no interest
-            total_interest = 0
+            # If minimum spend not met, only apply base interest
+            base_tier = next(t for t in bank_info['tiers'] if t['tier_type'] == 'base')
+            base_rate = float(str(base_tier['interest_rate']).strip('%')) / 100
+            base_amount = min(deposit_amount, float(base_tier['cap_amount']))
+            base_interest = base_amount * base_rate
+            total_interest += base_interest
+            add_tier(base_amount, base_rate, f"Base Interest ({base_tier['balance_tier']})")
     
     elif bank_info['bank'] == 'OCBC 360':
         # Always add base interest first for total amount
@@ -782,19 +745,23 @@ def streamlit_app():
                     # Show links differently based on device type
                     if st.session_state.is_session_pc:
                         # Desktop view - show in columns
-                        tutorial_col, method_col, rates_col = st.columns(3)
+                        tutorial_col, method_col, rates_col, feedback_col = st.columns(4)
                         with tutorial_col:
                             st.markdown("[How to use the calculator 📚](Tutorial)")
                         with method_col:
                             st.markdown("[Calculation Methodology 📝](Methodology)")
                         with rates_col:
                             st.markdown("[What interest rates are used?](Interest_Rates)")
+                        with feedback_col:
+                            st.markdown("[Provide Feedback](Feedback)")
                     else:
                         # Mobile view - show in expander
                         with st.expander("📱 Quick Links", expanded=False):
                             st.markdown("[How to use the calculator 📚](Tutorial)")
                             st.markdown("[Calculation Methodology 📝](Methodology)")
                             st.markdown("[What interest rates are used?](Interest_Rates)")
+                            st.markdown("[Provide Feedback](Feedback)")
+
    
                 # col 1 end #
 
@@ -950,10 +917,16 @@ def streamlit_app():
                                             st.write("Notes:")
                                             st.text("• Chocolate Finance targets 3% p.a. on any amount above $50K, but since this is only a target and not guaranteed, it has not been included in the calculation.")                
 
+                                        if result['bank'] == "OCBC 360":
+                                            st.write("Notes:")
+                                            st.text("• OCBC's website calculator may show slightly different results because they calculate interest based on a 31-day month.")                
 
                                         if result['bank'] in bank_urls:
-                                            st.markdown(f"Verify by visiting [{result['bank']}'s website →]({bank_urls[result['bank']]})")
-
+                                            col1, col2 = st.columns(2)
+                                            with col1:
+                                                st.markdown(f"🔍 Verify by visiting [{result['bank']}'s website →]({bank_urls[result['bank']]})")
+                                            with col2:
+                                                st.markdown("📝 Calculations look wrong? [Provide feedback →](/Feedback)")
 
                     
                     with tab2:
@@ -1033,7 +1006,7 @@ def streamlit_app():
                         <div style='background-color: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
                             <span style='color: #c62828; font-weight: bold;'>⚠️ Disclaimer:</span>
                             <span style='color: #c62828;'>
-                                This calculator provides general information only and does not constitute financial advice. 
+                                This calculator provides general information  for educational purposes only. It does not constitute financial advice. 
                                 Please verify all rates with the respective banks and consult a financial advisor for personalized recommendations.
                             </span>
                         </div>
