@@ -921,6 +921,10 @@ def streamlit_app():
                                             st.write("Notes:")
                                             st.text("• OCBC's website calculator may show slightly different results because they calculate interest based on a 31-day month.")                
 
+                                        if result['bank'] == "UOB One":
+                                            st.write("Notes:")
+                                            st.text("• There might be a further annual cash rebate of S$200. This has not been included in the calculations")  
+
                                         if result['bank'] in bank_urls:
                                             col1, col2 = st.columns(2)
                                             with col1:
@@ -1001,17 +1005,29 @@ def streamlit_app():
 
 
 
-                                # Add disclaimer in red
+                    #             # Add disclaimer in red
+                    # st.markdown("""
+                    #     <div style='background-color: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
+                    #         <span style='color: #c62828; font-weight: bold;'>⚠️ Disclaimer:<br></span>
+                    #         <span style='color: #c62828; font-size: 0.85em; line-height: 0.5;'>
+                    #             This calculator is for educational/convenience purposes only. Use at your own risk. Results are general estimates, not financial advice. Verify rates with banks and consult a financial advisor for personalized guidance. We assume no liability for losses resulting from decisions made using this tool.
+                    #         </span>
+                    #     </div>
+                    # """, unsafe_allow_html=True)
+                    # # col 2 end #
+
+
                     st.markdown("""
-                        <div style='background-color: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
-                            <span style='color: #c62828; font-weight: bold;'>⚠️ Disclaimer:</span>
-                            <span style='color: #c62828;'>
-                                This calculator provides general information  for educational purposes only. It does not constitute financial advice. 
-                                Please verify all rates with the respective banks and consult a financial advisor for personalized recommendations.
-                            </span>
+                        <div style='background-color: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 20px; line-height: 1.2;'>
+                            <p style='margin: 0; padding: 0;'>
+                                <span style='color: #c62828; font-weight: bold;'>⚠️ Disclaimer:</span><br>
+                                <span style='color: #c62828; font-size: 0.85em; display: block; margin-top: 5px;'>
+                                    This calculator is for educational/convenience purposes only. Use at your own risk. Results are general estimates, not financial advice. Verify rates with banks and consult a financial advisor for personalized guidance. No liability is accepted for losses resulting from decisions made using this tool.
+                                </span>
+                            </p>
                         </div>
                     """, unsafe_allow_html=True)
-                    # col 2 end #
+
 
 
 
