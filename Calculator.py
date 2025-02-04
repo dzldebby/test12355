@@ -772,14 +772,22 @@ def streamlit_app():
                         'grew_wealth': grew_wealth
                     }
 
-                    tutorial_col, method_col, rates_col = st.columns(3)
-                    with tutorial_col:
-                        st.markdown("[How to use the calculator 📚](Tutorial)")
-                    with method_col:
-                        st.markdown("[Calculation Methodology 📝](Methodology)")
-                    with rates_col:
-                        st.markdown("[What interest rates are used?](Interest_Rates)")
-
+                    # Show links differently based on device type
+                    if st.session_state.is_session_pc:
+                        # Desktop view - show in columns
+                        tutorial_col, method_col, rates_col = st.columns(3)
+                        with tutorial_col:
+                            st.markdown("[How to use the calculator 📚](Tutorial)")
+                        with method_col:
+                            st.markdown("[Calculation Methodology 📝](Methodology)")
+                        with rates_col:
+                            st.markdown("[What interest rates are used?](Interest_Rates)")
+                    else:
+                        # Mobile view - show in expander
+                        with st.expander("📱 Quick Links", expanded=False):
+                            st.markdown("[How to use the calculator 📚](Tutorial)")
+                            st.markdown("[Calculation Methodology 📝](Methodology)")
+                            st.markdown("[What interest rates are used?](Interest_Rates)")
    
                 # col 1 end #
 
