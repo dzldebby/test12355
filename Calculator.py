@@ -807,7 +807,7 @@ def streamlit_app():
                     # Create tabs with clearer descriptions and icons
                     tab1, tab2 = st.tabs([
                         "🏦 Single Bank Calculator",
-                        "🔄 Multi-Bank Optimizer"
+                        "🔄 Multi-Bank Optimizer [COMING SOON]"
                     ])
                     
                     with tab1:
@@ -964,7 +964,7 @@ def streamlit_app():
                             - Get recommendations for salary crediting and spending
                         """)
                         
-                        if st.button("Calculate Optimal Distribution", type="primary", key="multi_bank_calc"):
+                        if st.button("Calculate Optimal Distribution", type="primary", key="multi_bank_calc", disabled=True):
                             track_calculation('multi_bank', investment_amount, base_requirements)
                             with st.spinner("Optimizing distribution..."):
                                 # First optimize deposit distribution
