@@ -702,7 +702,7 @@ def streamlit_app():
                         with giro_col:
                             # Number of Bill Payments
                             giro_count = st.number_input(
-                                "Number of Bill Payments",
+                                "Number of Bill Payments / GIRO",
                                 min_value=0,
                                 max_value=10,
                                 value=0,
