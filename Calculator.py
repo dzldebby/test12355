@@ -219,6 +219,15 @@ def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
         
         # Add bonus interest based on requirements
         if deposit_amount >= 1500:  # Minimum balance requirement
+            # Process salary credit bonus if applicable
+            if bank_requirements.get('has_salary', False) and bank_requirements.get('salary_amount', 0) >= 2000:
+                salary_tier = next(t for t in bank_info['tiers'] if t['tier_type'] == 'salary')
+                rate = float(str(salary_tier['interest_rate']).strip('%')) / 100
+                bonus_amount = min(deposit_amount, float(salary_tier['cap_amount']))
+                interest = bonus_amount * rate
+                total_interest += interest
+                add_tier(bonus_amount, rate, "Salary Credit Bonus (≥$2,000)")
+
             # Process wealth bonus if applicable
             if bank_requirements.get('has_insurance', False):
                 wealth_tier = next(t for t in bank_info['tiers'] if t['tier_type'] == 'wealth')
