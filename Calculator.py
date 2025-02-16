@@ -950,7 +950,7 @@ def streamlit_app():
 
 
                                 # Get product recommendation
-                                #st.write("Attempting to get product recommendation...")  # Debug line
+                                st.write("Attempting to get product recommendation...")  # Debug line
                                 try:
                                     recommender = ProductRecommender()
                     
@@ -976,7 +976,7 @@ def streamlit_app():
                                                 train_initial_model()
                                         except Exception as e:
                                             pass 
-                                            #st.error(f"🚨 Unable to save recommendation data: {str(e)}")
+                                            st.error(f"🚨 Unable to save recommendation data: {str(e)}")
                                         
                                         st.write("---")
                                         st.write("### 🎯 Product Recommendation")
