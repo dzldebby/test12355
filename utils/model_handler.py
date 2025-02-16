@@ -8,6 +8,8 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 from .data_processor import PRODUCT_MAPPING, FEATURES, prepare_features
+import streamlit as st
+import traceback
 
 class ProductRecommender:
     def __init__(self):
@@ -83,16 +85,41 @@ class ProductRecommender:
             return False, 0.0
     
     def load_model(self):
-        """Load the trained model and explainer"""
+        """Load the trained model"""
         try:
-            if os.path.exists(self.model_path):
-                model_data = joblib.load(self.model_path)
-                self.model = model_data['model']
-                self.explainer = model_data['explainer']
-                return True
-            return False
+            # Debug current directory
+            st.write("Debug - Current directory:", os.getcwd())
+            st.write("Debug - Model directory:", self.model_dir)
+            st.write("Debug - Model path:", self.model_path)
+            
+            # Check if directory exists
+            st.write("Debug - Model directory exists:", os.path.exists(self.model_dir))
+            
+            # List files in model directory
+            if os.path.exists(self.model_dir):
+                st.write("Debug - Files in model directory:", os.listdir(self.model_dir))
+            
+            # Check if model file exists
+            st.write("Debug - Model file exists:", os.path.exists(self.model_path))
+            
+            if not os.path.exists(self.model_path):
+                st.error(f"Model file not found at: {self.model_path}")
+                return False
+            
+            st.write("Debug - Attempting to load model file...")
+            model_data = joblib.load(self.model_path)
+            
+            st.write("Debug - Model data keys:", model_data.keys())
+            
+            self.model = model_data['model']
+            self.explainer = model_data['explainer']
+            
+            st.write("Debug - Model loaded successfully")
+            return True
+        
         except Exception as e:
-            print(f"Error loading model: {str(e)}")
+            st.error(f"Error loading model: {str(e)}")
+            st.write("Debug - Model load error details:", traceback.format_exc())
             return False
     
     def predict(self, features):
