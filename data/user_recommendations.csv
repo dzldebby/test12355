@@ -1,0 +1,24 @@
+savings_amount,salary_above_3k,monthly_card_spend,num_giro_payments,has_insurance,has_investments,increased_balance,high_balance,recommended_product,timestamp
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 09:57:51.125993
+30000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:00:12.505450
+40000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:00:20.919613
+50000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:00:30.280860
+60000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:00:38.023568
+70000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:00:45.411648
+80000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:00:50.369502
+55000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:00:53.892533
+14000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:00:59.254518
+15000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:01:32.685375
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:04:00.754172
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:05:06.331174
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:05:16.542007
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:05:18.404731
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:05:32.419149
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:07:30.432827
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:07:36.346562
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:07:40.018987
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:07:45.103194
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:07:49.662755
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 10:53:52.326208
+10000.0,False,500.0,0,False,False,False,False,0,2025-02-16 12:15:40.520716
+838000.0,False,500.0,0,False,False,False,True,0,2025-02-16 12:15:48.978167

@@ -12,6 +12,9 @@ from analytics import (
 )
 from streamlit_javascript import st_javascript
 from user_agents import parse
+from utils.data_processor import prepare_features, PRODUCT_MAPPING, save_user_data
+from utils.model_handler import ProductRecommender
+from train_initial_model import train_initial_model
 
 def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
     """Calculate interest based on the bank's tier structure and requirements"""
@@ -306,7 +309,7 @@ def process_interest_rates(file_path='interest_rates.csv'):
     
     # Group by bank
     for bank_name, bank_group in df.groupby('bank'):
-        print(f"\nProcessing bank: {bank_name}")
+        #print(f"\nProcessing bank: {bank_name}")
         try:
             # Initialize bank data
             banks_data[bank_name] = {
@@ -334,19 +337,21 @@ def process_interest_rates(file_path='interest_rates.csv'):
                     }
                     
                     banks_data[bank_name]['tiers'].append(tier)
-                    print(f"Added tier: {tier}")
+                    #print(f"Added tier: {tier}")
+                    pass
                     
                 except (ValueError, TypeError) as e:
-                    print(f"Error processing tier: {e}")
+                    pass
+                    #print(f"Error processing tier: {e}")
             
             print(f"Successfully added {len(banks_data[bank_name]['tiers'])} tiers for {bank_name}")
                 
         except Exception as e:
-            print(f"Error processing {bank_name}: {e}")
+            #print(f"Error processing {bank_name}: {e}")
             import traceback
             traceback.print_exc()
     
-    print(f"\nFinished processing. Found {len(banks_data)} banks")
+    #print(f"\nFinished processing. Found {len(banks_data)} banks")
     return banks_data
 
 def optimize_bank_distribution(total_amount, banks_data, user_requirements):
@@ -843,8 +848,10 @@ def streamlit_app():
                                 # Display Optimal Bank First
                                 optimal_bank = bank_results[0]
                                 st.success(f"🏆 Optimal Choice: **{optimal_bank['bank']}** offers the highest interest rate!")
+                                
                                 st.metric("Monthly Interest", f"${optimal_bank['monthly_interest']:,.2f}")
                                 st.metric("Annual Interest", f"${optimal_bank['annual_interest']:,.2f}")
+
                                 
                                 # Show breakdown for optimal bank
                                 if optimal_bank['breakdown']:
@@ -941,7 +948,90 @@ def streamlit_app():
                                             with col2:
                                                 st.markdown("📝 Calculations look wrong? [Provide feedback →](/Feedback)")
 
+
+                                # Get product recommendation
+                                #st.write("Attempting to get product recommendation...")  # Debug line
+                                try:
+                                    recommender = ProductRecommender()
                     
+                                    model_loaded = recommender.load_model()
+                                    
+                                    if model_loaded:
+                                        user_data = prepare_features({
+                                            'savings_amount': float(investment_amount),
+                                            'salary_above_3k': float(base_requirements['salary_amount']) >= 3000,
+                                            'monthly_card_spend': float(base_requirements['spend_amount']),
+                                            'num_giro_payments': int(base_requirements['giro_count']),
+                                            'has_insurance': bool(base_requirements['has_insurance']),
+                                            'has_investments': bool(base_requirements['has_investments']),
+                                            'increased_balance': bool(base_requirements.get('increased_balance', False)),
+                                            'high_balance': float(investment_amount) >= 200000
+                                        })
+                                        
+                                        prediction, probabilities, explanations = recommender.predict(user_data)
+                                        
+                                        try:
+                                            total_records = save_user_data(user_data, prediction)
+                                            if total_records > 0 and total_records % 5 == 0:
+                                                train_initial_model()
+                                        except Exception as e:
+                                            pass 
+                                            #st.error(f"🚨 Unable to save recommendation data: {str(e)}")
+                                        
+                                        st.write("---")
+                                        st.write("### 🎯 Product Recommendation")
+                                        st.success(f"Based on your profile, we recommend: **{PRODUCT_MAPPING[prediction]}**")
+                                        
+                                        with st.expander("View Recommendation Details", expanded=True):
+                                            # Show confidence scores
+                                            st.write("#### 📊 Confidence Scores")
+                                            for product_id, prob in enumerate(probabilities):
+                                                st.write(f"- {PRODUCT_MAPPING[product_id]}: {prob:.2%}")
+                                            
+                                            # Show feature importance explanations
+                                            st.write("\n#### 🔍 Key Factors")
+                                            st.write("These factors influenced our recommendation:")
+                                            
+                                            for exp in explanations:
+                                                feature = exp['feature'].replace('_', ' ').title()
+                                                value = exp['value']
+                                                importance = exp['importance']
+                                                
+                                                # Create a more natural explanation
+                                                if feature == 'Savings Amount':
+                                                    detail = f"Your savings amount of ${value:,.2f}"
+                                                elif feature == 'Monthly Card Spend':
+                                                    detail = f"Your monthly card spend of ${value:,.2f}"
+                                                elif feature == 'Num Giro Payments':
+                                                    detail = f"You have {int(value)} GIRO payments"
+                                                elif feature == 'Has Insurance':
+                                                    detail = "You already have insurance" if value else "You don't have insurance yet"
+                                                elif feature == 'Has Investments':
+                                                    detail = "You have existing investments" if value else "You don't have investments yet"
+                                                elif feature == 'Increased Balance':
+                                                    detail = "Your balance has increased" if value else "Your balance hasn't increased"
+                                                elif feature == 'High Balance':
+                                                    detail = "You have a high balance" if value else "You have a moderate balance"
+                                                elif feature == 'Salary Above 3k':
+                                                    detail = "Your salary is above $3,000" if value else "Your salary is below $3,000"
+                                                
+                                                # Show explanation with importance
+                                                importance_width = min(100, int(abs(importance) * 100))  # Use absolute value
+                                                st.write(
+                                                    f"""<div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                                                        <div style='flex: 1;'>{detail}</div>
+                                                        <div style='width: 100px; background: #f0f2f6; height: 10px; border-radius: 5px;'>
+                                                            <div style='width: {importance_width}%; background: #00c853; height: 100%; border-radius: 5px;'></div>
+                                                        </div>
+                                                    </div>""",
+                                                    unsafe_allow_html=True
+                                                )
+                                except Exception as e:
+                                    st.error(f"Error in product recommendation: {str(e)}")
+                                    st.write("Debug info:")
+                                    st.write(f"investment_amount type: {type(investment_amount)}")
+                                    st.write(f"base_requirements: {base_requirements}")
+
                     with tab2:
                         st.write("""
                             **Optimize across multiple banks**
@@ -950,96 +1040,15 @@ def streamlit_app():
                             - Get recommendations for salary crediting and spending
                         """)
                         
-                        if st.button("Calculate Optimal Distribution", type="primary", key="multi_bank_calc", disabled=True):
-                            track_calculation('multi_bank', investment_amount, base_requirements)
-                            with st.spinner("Optimizing distribution..."):
-                                # First optimize deposit distribution
-                                top_solutions = optimize_bank_distribution(
-                                    investment_amount,
-                                    banks_data,
-                                    base_requirements
-                                )
-                                
-                                # Then optimize spend allocation for each solution
-                                for solution in top_solutions:
-                                    if solution['total_interest'] > 0:
-                                        spend_allocation, new_total_interest, interest_breakdown = optimize_spend_allocation(
-                                            card_spend,
-                                            banks_data,
-                                            solution['distribution'],
-                                            base_requirements
-                                        )
-                                        
-                                        # Update solution with spend allocation
-                                        solution['spend_allocation'] = spend_allocation
-                                        solution['total_interest'] = new_total_interest
-                                        solution['interest_breakdown'] = interest_breakdown
-                                
-                                # Display optimization results
-                                for i, solution in enumerate(top_solutions):
-                                    if solution['total_interest'] > 0:
-                                        with st.expander(f"💡 Optimization Scenario {i+1}", expanded=(i==0)):
-                                            st.metric(
-                                                "Monthly Interest",
-                                                f"${solution['total_interest']/12:,.2f}"
-                                            )
-                                            st.metric(
-                                                "Annual Interest",
-                                                f"${solution['total_interest']:,.2f}"
-                                            )
-                                                
-                                            # Deposit Distribution
-                                            st.write("### 💰 Recommended Deposit Distribution")
-                                            for bank, amount in solution['distribution'].items():
-                                                if amount > 0:
-                                                    st.write(f"• {bank}: ${amount:,.2f}")
-                                                
-                                            # Credit Card Spend Distribution
-                                            if solution.get('spend_allocation'):
-                                                st.write("\n### 💳 Credit Card Spend Distribution")
-                                                total_allocated = sum(solution['spend_allocation'].values())
-                                                remaining_spend = card_spend - total_allocated
-                                                
-                                                for bank, spend in solution['spend_allocation'].items():
-                                                    percentage = (spend / card_spend) * 100
-                                                    st.write(f"• {bank}: ${spend:,.2f} ({percentage:.1f}%)")
-                                                
-                                                if remaining_spend > 0:
-                                                    percentage = (remaining_spend / card_spend) * 100
-                                                    st.write(f"• Remaining unallocated spend: ${remaining_spend:,.2f} ({percentage:.1f}%)")
-                                                
-                                            # Salary Credit Info
-                                            if base_requirements['has_salary'] and solution['salary_bank']:
-                                                st.info(f"💡 Credit your salary to: {solution['salary_bank']}")
-
-
-
-                    #             # Add disclaimer in red
-                    # st.markdown("""
-                    #     <div style='background-color: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
-                    #         <span style='color: #c62828; font-weight: bold;'>⚠️ Disclaimer:<br></span>
-                    #         <span style='color: #c62828; font-size: 0.85em; line-height: 0.5;'>
-                    #             This calculator is for educational/convenience purposes only. Use at your own risk. Results are general estimates, not financial advice. Verify rates with banks and consult a financial advisor for personalized guidance. We assume no liability for losses resulting from decisions made using this tool.
-                    #         </span>
-                    #     </div>
-                    # """, unsafe_allow_html=True)
-                    # # col 2 end #
-
-
-                    st.markdown("""
-                        <div style='background-color: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 20px; line-height: 1.2;'>
-                            <p style='margin: 0; padding: 0;'>
-                                <span style='color: #c62828; font-weight: bold;'>⚠️ Disclaimer:</span><br>
-                                <span style='color: #c62828; font-size: 0.85em; display: block; margin-top: 5px;'>
-                                    This calculator is for educational/convenience purposes only. Use at your own risk. Results are general estimates, not financial advice. Verify rates with banks and consult a financial advisor for personalized guidance. No liability is accepted for losses resulting from decisions made using this tool.
+                        # Add disclaimer
+                        st.markdown("""
+                            <div style='background-color: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
+                                <span style='color: #c62828; font-weight: bold;'>⚠️ Disclaimer:<br></span>
+                                <span style='color: #c62828; font-size: 0.85em; line-height: 0.5;'>
+                                    This calculator is for educational/convenience purposes only. Use at your own risk. Results are general estimates, not financial advice. Verify rates with banks and consult a financial advisor for personalized guidance. We assume no liability for losses resulting from decisions made using this tool.
                                 </span>
-                            </p>
-                        </div>
-                    """, unsafe_allow_html=True)
-
-
-
-
+                            </div>
+                        """, unsafe_allow_html=True)
 
             # This is within col1 already
             except Exception as e:
