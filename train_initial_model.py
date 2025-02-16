@@ -3,6 +3,7 @@ from utils.model_handler import ProductRecommender
 import pandas as pd
 import os
 from datetime import datetime
+from xgboost import XGBClassifier
 
 def log_model_version(num_samples, accuracy, version):
     """Log model version information to a file"""
@@ -49,22 +50,29 @@ def train_initial_model():
     
     # Initialize and train the model
     print("\n2. Training model...")
-    recommender = ProductRecommender()
-    print(f"Model will be saved to: {recommender.model_path}")
-    
-    success, accuracy = recommender.train_model(X, y)
-    if not success:
-        print("✗ Error: Failed to train or save model")
-        return
-        
-    # Log the model version
-    log_model_version(len(X), accuracy, recommender.version)
-    print("✓ Model training completed!")
+    model = XGBClassifier(
+        objective='multi:softprob',
+        num_class=3,
+        max_depth=3,
+        learning_rate=0.1,
+        n_estimators=100
+    )
+    model.fit(X, y)
+
+    # Save model using xgboost's save_model
+    models_dir = os.path.join(os.path.dirname(__file__), 'models')
+    model.save_model(os.path.join(models_dir, 'product_recommender.xgb'))
+
+    # Create version file
+    with open(os.path.join(models_dir, 'version.txt'), 'w') as f:
+        f.write('1')
+
+    print("Initial model training completed and saved!")
     
     # Verify the model exists
-    if os.path.exists(recommender.model_path):
-        print(f"✓ Model file exists at: {recommender.model_path}")
-        print(f"✓ File size: {os.path.getsize(recommender.model_path)} bytes")
+    if os.path.exists(os.path.join(models_dir, 'product_recommender.xgb')):
+        print(f"✓ Model file exists at: {os.path.join(models_dir, 'product_recommender.xgb')}")
+        print(f"✓ File size: {os.path.getsize(os.path.join(models_dir, 'product_recommender.xgb'))} bytes")
     else:
         print("✗ Error: Model file not found after training")
         return
