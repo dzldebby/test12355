@@ -1,8 +1,13 @@
-streamlit
-pandas
-numpy
+streamlit>=1.24.0
+pandas>=1.5.3
+numpy>=1.24.3
 scipy
+scikit-learn>=1.2.2
+xgboost>=1.7.5
+shap>=0.41.0
+joblib>=1.2.0
 mixpanel-python
+mixpanel>=4.9.0
 mixpanel
 requests==2.31.0
 streamlit-javascript
