@@ -18,7 +18,7 @@ class ProductRecommender:
         self.scaler = None
         self.model_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models')
         os.makedirs(self.model_dir, exist_ok=True)
-        self.model_path = os.path.join(self.model_dir, 'product_recommender.joblib')
+        self.model_path = os.path.join(self.model_dir, 'product_recommender.xgb')
         self.scaler_path = os.path.join(self.model_dir, 'scaler.joblib')
         self.version_path = os.path.join(self.model_dir, 'version.txt')
         self.log_path = os.path.join(self.model_dir, 'model_versions.log')
@@ -66,7 +66,7 @@ class ProductRecommender:
                 'model': self.model,
                 'explainer': self.explainer
             }
-            joblib.dump(model_data, self.model_path)
+            self.model.save_model(self.model_path)
             
             # Update version
             self.version += 1
@@ -87,36 +87,26 @@ class ProductRecommender:
     def load_model(self):
         """Load the trained model"""
         try:
-            # Debug current directory
             st.write("Debug - Current directory:", os.getcwd())
             st.write("Debug - Model directory:", self.model_dir)
             st.write("Debug - Model path:", self.model_path)
             
-            # Check if directory exists
-            st.write("Debug - Model directory exists:", os.path.exists(self.model_dir))
-            
-            # List files in model directory
-            if os.path.exists(self.model_dir):
-                st.write("Debug - Files in model directory:", os.listdir(self.model_dir))
-            
-            # Check if model file exists
-            st.write("Debug - Model file exists:", os.path.exists(self.model_path))
-            
             if not os.path.exists(self.model_path):
                 st.error(f"Model file not found at: {self.model_path}")
                 return False
-            
+                
             st.write("Debug - Attempting to load model file...")
-            model_data = joblib.load(self.model_path)
             
-            st.write("Debug - Model data keys:", model_data.keys())
+            # Load using XGBoost directly
+            self.model = xgb.XGBClassifier()
+            self.model.load_model(self.model_path)
             
-            self.model = model_data['model']
-            self.explainer = model_data['explainer']
+            # Create new SHAP explainer
+            self.explainer = shap.TreeExplainer(self.model)
             
             st.write("Debug - Model loaded successfully")
             return True
-        
+            
         except Exception as e:
             st.error(f"Error loading model: {str(e)}")
             st.write("Debug - Model load error details:", traceback.format_exc())
@@ -215,7 +205,7 @@ class ProductRecommender:
             'model': self.model,
             'explainer': self.explainer
         }
-        joblib.dump(model_data, self.model_path)
+        self.model.save_model(self.model_path)
         if self.scaler:
             joblib.dump(self.scaler, self.scaler_path)
             
