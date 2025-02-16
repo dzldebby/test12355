@@ -950,45 +950,55 @@ def streamlit_app():
 
 
                                 # Get product recommendation
-                                st.write("Attempting to get product recommendation...")  # Debug line
-                                try:
-                                    recommender = ProductRecommender()
-                    
-                                    model_loaded = recommender.load_model()
+                                st.write("### 🔍 Product Recommendation Debug")
+                                st.write("Attempting to get product recommendation...")
+                                
+                                recommender = ProductRecommender()
+                                st.write("✓ Created recommender instance")
+                                
+                                model_loaded = recommender.load_model()
+                                st.write(f"✓ Model loaded: {model_loaded}")
+                                
+                                if model_loaded:
+                                    user_data = prepare_features({
+                                        'savings_amount': float(investment_amount),
+                                        'salary_above_3k': float(base_requirements['salary_amount']) >= 3000,
+                                        'monthly_card_spend': float(base_requirements['spend_amount']),
+                                        'num_giro_payments': int(base_requirements['giro_count']),
+                                        'has_insurance': bool(base_requirements['has_insurance']),
+                                        'has_investments': bool(base_requirements['has_investments']),
+                                        'increased_balance': bool(base_requirements.get('increased_balance', False)),
+                                        'high_balance': float(investment_amount) >= 200000
+                                    })
+                                    st.write("✓ Prepared user data:", user_data)
                                     
-                                    if model_loaded:
-                                        user_data = prepare_features({
-                                            'savings_amount': float(investment_amount),
-                                            'salary_above_3k': float(base_requirements['salary_amount']) >= 3000,
-                                            'monthly_card_spend': float(base_requirements['spend_amount']),
-                                            'num_giro_payments': int(base_requirements['giro_count']),
-                                            'has_insurance': bool(base_requirements['has_insurance']),
-                                            'has_investments': bool(base_requirements['has_investments']),
-                                            'increased_balance': bool(base_requirements.get('increased_balance', False)),
-                                            'high_balance': float(investment_amount) >= 200000
-                                        })
+                                    prediction, probabilities, explanations = recommender.predict(user_data)
+                                    st.write(f"✓ Got prediction: {prediction}")
+                                    st.write(f"✓ Got probabilities: {probabilities}")
+                                    st.write(f"✓ Got explanations: {explanations}")
+                                    
+                                    try:
+                                        total_records = save_user_data(user_data, prediction)
+                                        st.write(f"✓ Saved data. Total records: {total_records}")
+                                        if total_records > 0 and total_records % 5 == 0:
+                                            st.write("Training initial model...")
+                                            train_initial_model()
+                                    except Exception as e:
+                                        st.error(f"🚨 Unable to save recommendation data: {str(e)}")
+                                        st.write("Save error details:", str(e))
+                                    
+                                    st.write("---")
+                                    st.write("### 🎯 Product Recommendation")
+                                    st.success(f"Based on your profile, we recommend: **{PRODUCT_MAPPING[prediction]}**")
+                                    
+                                    with st.expander("View Recommendation Details", expanded=True):
+                                        # Show confidence scores
+                                        st.write("#### 📊 Confidence Scores")
+                                        for product_id, prob in enumerate(probabilities):
+                                            st.write(f"- {PRODUCT_MAPPING[product_id]}: {prob:.2%}")
                                         
-                                        prediction, probabilities, explanations = recommender.predict(user_data)
-                                        
-                                        try:
-                                            total_records = save_user_data(user_data, prediction)
-                                            if total_records > 0 and total_records % 5 == 0:
-                                                train_initial_model()
-                                        except Exception as e:
-                                            pass 
-                                            st.error(f"🚨 Unable to save recommendation data: {str(e)}")
-                                        
-                                        st.write("---")
-                                        st.write("### 🎯 Product Recommendation")
-                                        st.success(f"Based on your profile, we recommend: **{PRODUCT_MAPPING[prediction]}**")
-                                        
-                                        with st.expander("View Recommendation Details", expanded=True):
-                                            # Show confidence scores
-                                            st.write("#### 📊 Confidence Scores")
-                                            for product_id, prob in enumerate(probabilities):
-                                                st.write(f"- {PRODUCT_MAPPING[product_id]}: {prob:.2%}")
-                                            
-                                            # Show feature importance explanations
+                                        # Show feature importance explanations
+                                        if explanations:
                                             st.write("\n#### 🔍 Key Factors")
                                             st.write("These factors influenced our recommendation:")
                                             
@@ -1016,7 +1026,7 @@ def streamlit_app():
                                                     detail = "Your salary is above $3,000" if value else "Your salary is below $3,000"
                                                 
                                                 # Show explanation with importance
-                                                importance_width = min(100, int(abs(importance) * 100))  # Use absolute value
+                                                importance_width = min(100, int(abs(importance) * 100))
                                                 st.write(
                                                     f"""<div style='display: flex; align-items: center; margin-bottom: 10px;'>
                                                         <div style='flex: 1;'>{detail}</div>
@@ -1026,11 +1036,8 @@ def streamlit_app():
                                                     </div>""",
                                                     unsafe_allow_html=True
                                                 )
-                                except Exception as e:
-                                    st.error(f"Error in product recommendation: {str(e)}")
-                                    st.write("Debug info:")
-                                    st.write(f"investment_amount type: {type(investment_amount)}")
-                                    st.write(f"base_requirements: {base_requirements}")
+                                        else:
+                                            st.warning("No explanation factors available")
 
                     with tab2:
                         st.write("""
