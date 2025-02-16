@@ -949,95 +949,95 @@ def streamlit_app():
                                                 st.markdown("📝 Calculations look wrong? [Provide feedback →](/Feedback)")
 
 
-                                # Get product recommendation
-                                st.write("### 🔍 Product Recommendation Debug")
-                                st.write("Attempting to get product recommendation...")
+                                # # Get product recommendation
+                                # st.write("### 🔍 Product Recommendation Debug")
+                                # st.write("Attempting to get product recommendation...")
                                 
-                                recommender = ProductRecommender()
-                                st.write("✓ Created recommender instance")
+                                # recommender = ProductRecommender()
+                                # st.write("✓ Created recommender instance")
                                 
-                                model_loaded = recommender.load_model()
-                                st.write(f"✓ Model loaded: {model_loaded}")
+                                # model_loaded = recommender.load_model()
+                                # st.write(f"✓ Model loaded: {model_loaded}")
                                 
-                                if model_loaded:
-                                    user_data = prepare_features({
-                                        'savings_amount': float(investment_amount),
-                                        'salary_above_3k': float(base_requirements['salary_amount']) >= 3000,
-                                        'monthly_card_spend': float(base_requirements['spend_amount']),
-                                        'num_giro_payments': int(base_requirements['giro_count']),
-                                        'has_insurance': bool(base_requirements['has_insurance']),
-                                        'has_investments': bool(base_requirements['has_investments']),
-                                        'increased_balance': bool(base_requirements.get('increased_balance', False)),
-                                        'high_balance': float(investment_amount) >= 200000
-                                    })
-                                    st.write("✓ Prepared user data:", user_data)
+                                # if model_loaded:
+                                #     user_data = prepare_features({
+                                #         'savings_amount': float(investment_amount),
+                                #         'salary_above_3k': float(base_requirements['salary_amount']) >= 3000,
+                                #         'monthly_card_spend': float(base_requirements['spend_amount']),
+                                #         'num_giro_payments': int(base_requirements['giro_count']),
+                                #         'has_insurance': bool(base_requirements['has_insurance']),
+                                #         'has_investments': bool(base_requirements['has_investments']),
+                                #         'increased_balance': bool(base_requirements.get('increased_balance', False)),
+                                #         'high_balance': float(investment_amount) >= 200000
+                                #     })
+                                #     st.write("✓ Prepared user data:", user_data)
                                     
-                                    prediction, probabilities, explanations = recommender.predict(user_data)
-                                    st.write(f"✓ Got prediction: {prediction}")
-                                    st.write(f"✓ Got probabilities: {probabilities}")
-                                    st.write(f"✓ Got explanations: {explanations}")
+                                #     prediction, probabilities, explanations = recommender.predict(user_data)
+                                #     st.write(f"✓ Got prediction: {prediction}")
+                                #     st.write(f"✓ Got probabilities: {probabilities}")
+                                #     st.write(f"✓ Got explanations: {explanations}")
                                     
-                                    try:
-                                        total_records = save_user_data(user_data, prediction)
-                                        st.write(f"✓ Saved data. Total records: {total_records}")
-                                        if total_records > 0 and total_records % 5 == 0:
-                                            st.write("Training initial model...")
-                                            train_initial_model()
-                                    except Exception as e:
-                                        st.error(f"🚨 Unable to save recommendation data: {str(e)}")
-                                        st.write("Save error details:", str(e))
+                                #     try:
+                                #         total_records = save_user_data(user_data, prediction)
+                                #         st.write(f"✓ Saved data. Total records: {total_records}")
+                                #         if total_records > 0 and total_records % 5 == 0:
+                                #             st.write("Training initial model...")
+                                #             train_initial_model()
+                                #     except Exception as e:
+                                #         st.error(f"🚨 Unable to save recommendation data: {str(e)}")
+                                #         st.write("Save error details:", str(e))
                                     
-                                    st.write("---")
-                                    st.write("### 🎯 Product Recommendation")
-                                    st.success(f"Based on your profile, we recommend: **{PRODUCT_MAPPING[prediction]}**")
+                                #     st.write("---")
+                                #     st.write("### 🎯 Product Recommendation")
+                                #     st.success(f"Based on your profile, we recommend: **{PRODUCT_MAPPING[prediction]}**")
                                     
-                                    with st.expander("View Recommendation Details", expanded=True):
-                                        # Show confidence scores
-                                        st.write("#### 📊 Confidence Scores")
-                                        for product_id, prob in enumerate(probabilities):
-                                            st.write(f"- {PRODUCT_MAPPING[product_id]}: {prob:.2%}")
+                                #     with st.expander("View Recommendation Details", expanded=True):
+                                #         # Show confidence scores
+                                #         st.write("#### 📊 Confidence Scores")
+                                #         for product_id, prob in enumerate(probabilities):
+                                #             st.write(f"- {PRODUCT_MAPPING[product_id]}: {prob:.2%}")
                                         
-                                        # Show feature importance explanations
-                                        if explanations:
-                                            st.write("\n#### 🔍 Key Factors")
-                                            st.write("These factors influenced our recommendation:")
+                                #         # Show feature importance explanations
+                                #         if explanations:
+                                #             st.write("\n#### 🔍 Key Factors")
+                                #             st.write("These factors influenced our recommendation:")
                                             
-                                            for exp in explanations:
-                                                feature = exp['feature'].replace('_', ' ').title()
-                                                value = exp['value']
-                                                importance = exp['importance']
+                                #             for exp in explanations:
+                                #                 feature = exp['feature'].replace('_', ' ').title()
+                                #                 value = exp['value']
+                                #                 importance = exp['importance']
                                                 
-                                                # Create a more natural explanation
-                                                if feature == 'Savings Amount':
-                                                    detail = f"Your savings amount of ${value:,.2f}"
-                                                elif feature == 'Monthly Card Spend':
-                                                    detail = f"Your monthly card spend of ${value:,.2f}"
-                                                elif feature == 'Num Giro Payments':
-                                                    detail = f"You have {int(value)} GIRO payments"
-                                                elif feature == 'Has Insurance':
-                                                    detail = "You already have insurance" if value else "You don't have insurance yet"
-                                                elif feature == 'Has Investments':
-                                                    detail = "You have existing investments" if value else "You don't have investments yet"
-                                                elif feature == 'Increased Balance':
-                                                    detail = "Your balance has increased" if value else "Your balance hasn't increased"
-                                                elif feature == 'High Balance':
-                                                    detail = "You have a high balance" if value else "You have a moderate balance"
-                                                elif feature == 'Salary Above 3k':
-                                                    detail = "Your salary is above $3,000" if value else "Your salary is below $3,000"
+                                #                 # Create a more natural explanation
+                                #                 if feature == 'Savings Amount':
+                                #                     detail = f"Your savings amount of ${value:,.2f}"
+                                #                 elif feature == 'Monthly Card Spend':
+                                #                     detail = f"Your monthly card spend of ${value:,.2f}"
+                                #                 elif feature == 'Num Giro Payments':
+                                #                     detail = f"You have {int(value)} GIRO payments"
+                                #                 elif feature == 'Has Insurance':
+                                #                     detail = "You already have insurance" if value else "You don't have insurance yet"
+                                #                 elif feature == 'Has Investments':
+                                #                     detail = "You have existing investments" if value else "You don't have investments yet"
+                                #                 elif feature == 'Increased Balance':
+                                #                     detail = "Your balance has increased" if value else "Your balance hasn't increased"
+                                #                 elif feature == 'High Balance':
+                                #                     detail = "You have a high balance" if value else "You have a moderate balance"
+                                #                 elif feature == 'Salary Above 3k':
+                                #                     detail = "Your salary is above $3,000" if value else "Your salary is below $3,000"
                                                 
-                                                # Show explanation with importance
-                                                importance_width = min(100, int(abs(importance) * 100))
-                                                st.write(
-                                                    f"""<div style='display: flex; align-items: center; margin-bottom: 10px;'>
-                                                        <div style='flex: 1;'>{detail}</div>
-                                                        <div style='width: 100px; background: #f0f2f6; height: 10px; border-radius: 5px;'>
-                                                            <div style='width: {importance_width}%; background: #00c853; height: 100%; border-radius: 5px;'></div>
-                                                        </div>
-                                                    </div>""",
-                                                    unsafe_allow_html=True
-                                                )
-                                        else:
-                                            st.warning("No explanation factors available")
+                                #                 # Show explanation with importance
+                                #                 importance_width = min(100, int(abs(importance) * 100))
+                                #                 st.write(
+                                #                     f"""<div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                                #                         <div style='flex: 1;'>{detail}</div>
+                                #                         <div style='width: 100px; background: #f0f2f6; height: 10px; border-radius: 5px;'>
+                                #                             <div style='width: {importance_width}%; background: #00c853; height: 100%; border-radius: 5px;'></div>
+                                #                         </div>
+                                #                     </div>""",
+                                #                     unsafe_allow_html=True
+                                #                 )
+                                #         else:
+                                #             st.warning("No explanation factors available")
 
                     with tab2:
                         st.write("""
