@@ -791,7 +791,7 @@ def streamlit_app():
                     # Create tabs with clearer descriptions and icons
                     tab1, tab2 = st.tabs([
                         "🏦 Single Bank Calculator",
-                        "🔄 Multi-Bank Optimizer [COMING SOON]"
+                        "🎯 Insurance Product Recommendation"
                     ])
                     
                     with tab1:
@@ -1046,22 +1046,78 @@ def streamlit_app():
                                 #             st.warning("No explanation factors available")
 
                     with tab2:
-                        st.write("""
-                            **Optimize across multiple banks**
-                            - Find the best combination of accounts
-                            - Maximize your total interest earned
-                            - Get recommendations for salary crediting and spending
-                        """)
+                        st.write("### 🎯 Insurance Product Recommendation")
+                        st.write("Based on your financial profile from Step 1, here's our insurance recommendation.")
                         
-                        # Add disclaimer
-                        st.markdown("""
-                            <div style='background-color: #ffebee; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
-                                <span style='color: #c62828; font-weight: bold;'>⚠️ Disclaimer:<br></span>
-                                <span style='color: #c62828; font-size: 0.85em; line-height: 0.5;'>
-                                    This calculator is for educational/convenience purposes only. Use at your own risk. Results are general estimates, not financial advice. Verify rates with banks and consult a financial advisor for personalized guidance. We assume no liability for losses resulting from decisions made using this tool.
-                                </span>
-                            </div>
-                        """, unsafe_allow_html=True)
+                        recommend_clicked = st.button("Get Recommendation", type="primary")
+                        
+                        if recommend_clicked:
+                            try:
+                                # Use values from Step 1
+                                savings_amount = investment_amount  # From Step 1
+                                monthly_spend = base_requirements['spend_amount']  # From Step 1
+                                has_insurance = base_requirements.get('has_insurance', 0)  # From Step 1
+                                
+                                # Use raw GitHub URL
+                                github_url = "https://raw.githubusercontent.com/dzldebby/test12355/7ad19457642cbae6579ba4a3cccd843006819cc0/models/insurance_model.pkl"
+                                
+                                # Download and load model
+                                response = requests.get(github_url)
+                                
+                                if response.status_code == 200:
+                                    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                                        tmp_file.write(response.content)
+                                        tmp_file.flush()
+                                        
+                                        with open(tmp_file.name, 'rb') as f:
+                                            model_data = pickle.load(f)
+                                            
+                                        model = model_data['model']
+                                        feature_names = model_data['feature_names']
+                                        target_names = model_data['target_names']
+                                        
+                                        # Prepare features
+                                        features = np.array([[
+                                            float(savings_amount),
+                                            float(monthly_spend),
+                                            float(has_insurance)
+                                        ]])
+                                        
+                                        # Get prediction and probabilities
+                                        prediction = model.predict(features)[0]
+                                        probabilities = model.predict_proba(features)[0]
+                                        
+                                        # Display recommendation
+                                        recommended_product = target_names[prediction]
+                                        st.success(f"✨ Recommended Insurance Product: **{recommended_product}**")
+                                        
+                                        # Display confidence scores
+                                        st.write("#### Confidence Scores:")
+                                        for product_id, prob in enumerate(probabilities):
+                                            product_name = target_names[product_id]
+                                            progress_width = int(prob * 100)
+                                            st.write(
+                                                f"""<div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                                                    <div style='width: 200px;'>{product_name}</div>
+                                                    <div style='flex-grow: 1; background: #f0f2f6; height: 20px; border-radius: 10px;'>
+                                                        <div style='width: {progress_width}%; background: #00c853; height: 100%; border-radius: 10px;'></div>
+                                                    </div>
+                                                    <div style='margin-left: 10px;'>{prob:.1%}</div>
+                                                </div>""",
+                                                unsafe_allow_html=True
+                                            )
+                                        
+                                        # Display input features
+                                        st.write("\n#### Based on your profile from Step 1:")
+                                        st.write(f"• Savings Amount: ${savings_amount:,.2f}")
+                                        st.write(f"• Monthly Card Spend: ${monthly_spend:,.2f}")
+                                        st.write(f"• Has Existing Insurance: {'Yes' if has_insurance else 'No'}")
+                                        
+                                else:
+                                    st.error("Unable to load insurance recommendation model")
+                                    
+                            except Exception as e:
+                                st.error("Error generating insurance recommendation")
 
             # This is within col1 already
             except Exception as e:
@@ -1170,90 +1226,50 @@ def calculate_single_bank(investment_amount, base_requirements):
     st.write("### 🎯 Insurance Recommendation")
     
     try:
-        st.write("🔄 Debug: Starting recommendation process...")
-        st.write(f"💰 Debug: Investment amount: ${investment_amount:,.2f}")
-        st.write(f"📊 Debug: Base requirements: {base_requirements}")
-        
         # Use raw GitHub URL
         github_url = "https://raw.githubusercontent.com/dzldebby/test12355/7ad19457642cbae6579ba4a3cccd843006819cc0/models/insurance_model.pkl"
-        st.write("📥 Debug: Downloading from URL:", github_url)
         
         # Download and load model
         response = requests.get(github_url)
-        st.write(f"📡 Debug: Response status code: {response.status_code}")
-        st.write(f"📦 Debug: Response content type: {response.headers.get('content-type', 'unknown')}")
         
         if response.status_code == 200:
-            st.write("✓ Debug: Successfully downloaded model")
-            st.write(f"🔍 Debug: First few bytes: {response.content[:20]}")
-            
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 tmp_file.write(response.content)
                 tmp_file.flush()
-                st.write(f"💾 Debug: Saved to temporary file: {tmp_file.name}")
                 
                 with open(tmp_file.name, 'rb') as f:
-                    st.write("📂 Debug: Loading model data...")
                     model_data = pickle.load(f)
-                    st.write("✓ Debug: Model data loaded")
                     
-                    model = model_data['model']
-                    feature_names = model_data['feature_names']
-                    target_names = model_data['target_names']
-                    
-                    st.write(f"📝 Debug: Feature names: {feature_names}")
-                    st.write(f"🎯 Debug: Target names: {target_names}")
-                    
-                    # Prepare features
-                    features = np.array([[
-                        float(investment_amount),
-                        float(base_requirements['spend_amount']),
-                        float(base_requirements.get('has_insurance', 0))
-                    ]])
-                    st.write(f"📊 Debug: Input features array: {features}")
-                    
-                    # Get prediction and probabilities
-                    st.write("🤔 Debug: Making prediction...")
-                    prediction = model.predict(features)[0]
-                    probabilities = model.predict_proba(features)[0]
-                    st.write(f"✨ Debug: Raw prediction: {prediction}")
-                    st.write(f"📊 Debug: Raw probabilities: {probabilities}")
-                    
-                    # Display recommendation
-                    recommended_product = target_names[prediction]
-                    st.write(f"🎯 Debug: Recommended product: {recommended_product}")
-                    
-                    st.success(f"✨ Recommended Insurance Product: **{recommended_product}**")
-                    
-                    # Display confidence scores
-                    st.write("#### Confidence Scores:")
-                    for product_id, prob in enumerate(probabilities):
-                        product_name = target_names[product_id]
-                        progress_width = int(prob * 100)
-                        st.write(
-                            f"""<div style='display: flex; align-items: center; margin-bottom: 10px;'>
-                                <div style='width: 200px;'>{product_name}</div>
-                                <div style='flex-grow: 1; background: #f0f2f6; height: 20px; border-radius: 10px;'>
-                                    <div style='width: {progress_width}%; background: #00c853; height: 100%; border-radius: 10px;'></div>
-                                </div>
-                                <div style='margin-left: 10px;'>{prob:.1%}</div>
-                            </div>""",
-                            unsafe_allow_html=True
-                        )
-                    
-                    # Display input features
-                    st.write("\n#### Based on your profile:")
-                    st.write(f"• Savings Amount: ${investment_amount:,.2f}")
-                    st.write(f"• Monthly Card Spend: ${base_requirements['spend_amount']:,.2f}")
-                    st.write(f"• Has Existing Insurance: {'Yes' if base_requirements.get('has_insurance', 0) else 'No'}")
-                    
+                model = model_data['model']
+                feature_names = model_data['feature_names']
+                target_names = model_data['target_names']
+                
+                # Prepare features
+                features = np.array([[
+                    float(investment_amount),
+                    float(base_requirements['spend_amount']),
+                    float(base_requirements.get('has_insurance', 0))
+                ]])
+                
+                # Get prediction and probabilities
+                prediction = model.predict(features)[0]
+                probabilities = model.predict_proba(features)[0]
+                
+                # Display recommendation
+                recommended_product = target_names[prediction]
+                st.success(f"✨ Recommended Insurance Product: **{recommended_product}**")
+                
+                # Display input features
+                st.write("\n#### Based on your profile:")
+                st.write(f"• Savings Amount: ${investment_amount:,.2f}")
+                st.write(f"• Monthly Card Spend: ${base_requirements['spend_amount']:,.2f}")
+                st.write(f"• Has Existing Insurance: {'Yes' if base_requirements.get('has_insurance', 0) else 'No'}")
+                
         else:
-            st.error(f"Failed to download model: Status {response.status_code}")
-            st.write("Response content:", response.content[:200])
+            st.error("Unable to load insurance recommendation model")
             
     except Exception as e:
-        st.error(f"❌ Error: {str(e)}")
-        st.write("📋 Full error details:", traceback.format_exc())
+        st.error("Error generating insurance recommendation")
 
 if __name__ == "__main__":
 
