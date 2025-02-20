@@ -15,6 +15,9 @@ from user_agents import parse
 from utils.data_processor import prepare_features, PRODUCT_MAPPING, save_user_data
 from utils.model_handler import ProductRecommender
 from train_initial_model import train_initial_model
+import requests
+import tempfile
+import pickle
 
 def calculate_bank_interest(deposit_amount, bank_info, bank_requirements):
     """Calculate interest based on the bank's tier structure and requirements"""
@@ -812,6 +815,9 @@ def streamlit_app():
                                     'variant': variant
                                 })
 
+                            # Add this line to call the function when button is clicked
+                            calculate_single_bank(investment_amount, base_requirements)  # Pass both parameters
+
                         if st.session_state.show_description:
                             st.markdown("""
                                 **Calculate interest for a single bank account***""")
@@ -1158,6 +1164,96 @@ def optimize_spend_allocation(total_spend, banks_data, deposit_amounts, base_req
     try_allocation(total_spend, eligible_banks, {})
     
     return best_allocation, best_total_interest, best_breakdown
+
+def calculate_single_bank(investment_amount, base_requirements):
+    st.write("---")
+    st.write("### 🎯 Insurance Recommendation")
+    
+    try:
+        st.write("🔄 Debug: Starting recommendation process...")
+        st.write(f"💰 Debug: Investment amount: ${investment_amount:,.2f}")
+        st.write(f"📊 Debug: Base requirements: {base_requirements}")
+        
+        # Use raw GitHub URL
+        github_url = "https://raw.githubusercontent.com/dzldebby/test12355/7ad19457642cbae6579ba4a3cccd843006819cc0/models/insurance_model.pkl"
+        st.write("📥 Debug: Downloading from URL:", github_url)
+        
+        # Download and load model
+        response = requests.get(github_url)
+        st.write(f"📡 Debug: Response status code: {response.status_code}")
+        st.write(f"📦 Debug: Response content type: {response.headers.get('content-type', 'unknown')}")
+        
+        if response.status_code == 200:
+            st.write("✓ Debug: Successfully downloaded model")
+            st.write(f"🔍 Debug: First few bytes: {response.content[:20]}")
+            
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                tmp_file.write(response.content)
+                tmp_file.flush()
+                st.write(f"💾 Debug: Saved to temporary file: {tmp_file.name}")
+                
+                with open(tmp_file.name, 'rb') as f:
+                    st.write("📂 Debug: Loading model data...")
+                    model_data = pickle.load(f)
+                    st.write("✓ Debug: Model data loaded")
+                    
+                    model = model_data['model']
+                    feature_names = model_data['feature_names']
+                    target_names = model_data['target_names']
+                    
+                    st.write(f"📝 Debug: Feature names: {feature_names}")
+                    st.write(f"🎯 Debug: Target names: {target_names}")
+                    
+                    # Prepare features
+                    features = np.array([[
+                        float(investment_amount),
+                        float(base_requirements['spend_amount']),
+                        float(base_requirements.get('has_insurance', 0))
+                    ]])
+                    st.write(f"📊 Debug: Input features array: {features}")
+                    
+                    # Get prediction and probabilities
+                    st.write("🤔 Debug: Making prediction...")
+                    prediction = model.predict(features)[0]
+                    probabilities = model.predict_proba(features)[0]
+                    st.write(f"✨ Debug: Raw prediction: {prediction}")
+                    st.write(f"📊 Debug: Raw probabilities: {probabilities}")
+                    
+                    # Display recommendation
+                    recommended_product = target_names[prediction]
+                    st.write(f"🎯 Debug: Recommended product: {recommended_product}")
+                    
+                    st.success(f"✨ Recommended Insurance Product: **{recommended_product}**")
+                    
+                    # Display confidence scores
+                    st.write("#### Confidence Scores:")
+                    for product_id, prob in enumerate(probabilities):
+                        product_name = target_names[product_id]
+                        progress_width = int(prob * 100)
+                        st.write(
+                            f"""<div style='display: flex; align-items: center; margin-bottom: 10px;'>
+                                <div style='width: 200px;'>{product_name}</div>
+                                <div style='flex-grow: 1; background: #f0f2f6; height: 20px; border-radius: 10px;'>
+                                    <div style='width: {progress_width}%; background: #00c853; height: 100%; border-radius: 10px;'></div>
+                                </div>
+                                <div style='margin-left: 10px;'>{prob:.1%}</div>
+                            </div>""",
+                            unsafe_allow_html=True
+                        )
+                    
+                    # Display input features
+                    st.write("\n#### Based on your profile:")
+                    st.write(f"• Savings Amount: ${investment_amount:,.2f}")
+                    st.write(f"• Monthly Card Spend: ${base_requirements['spend_amount']:,.2f}")
+                    st.write(f"• Has Existing Insurance: {'Yes' if base_requirements.get('has_insurance', 0) else 'No'}")
+                    
+        else:
+            st.error(f"Failed to download model: Status {response.status_code}")
+            st.write("Response content:", response.content[:200])
+            
+    except Exception as e:
+        st.error(f"❌ Error: {str(e)}")
+        st.write("📋 Full error details:", traceback.format_exc())
 
 if __name__ == "__main__":
 
